@@ -1,0 +1,13 @@
+services:
+  pitch-bot:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      STATUS_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:8781:8781"
+    volumes:
+      - ./data:/app/data
+
