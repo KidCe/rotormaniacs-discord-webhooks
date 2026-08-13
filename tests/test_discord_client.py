@@ -17,7 +17,7 @@ class RecordingClient(DiscordWebhookClient):
         super().__init__("https://discord.com/api/webhooks/123/token", state_store)
         self.requests: list[tuple[str, str, dict[str, object]]] = []
 
-    def _request(self, method: str, url: str, payload: dict[str, object]) -> dict[str, object]:
+    def _request(self, method: str, url: str, payload: dict[str, object] | None) -> dict[str, object]:
         self.requests.append((method, url, payload))
         return {"id": "456"}
 
@@ -50,6 +50,19 @@ class DiscordWebhookClientTests(unittest.TestCase):
             self.assertEqual(client.publish(payload), "456")
             self.assertEqual(client.requests, [])
             self.assertEqual(client.last_operation, "unchanged")
+
+    def test_delete_reminder_message(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            client = RecordingClient(StateStore(Path(directory) / "state.json"))
+            client.delete("789")
+            self.assertEqual(client.requests, [("DELETE", "https://discord.com/api/webhooks/123/token/messages/789", None)])
+
+    def test_reminder_message_state_round_trips(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = StateStore(Path(directory) / "state.json")
+            reminders = {"fixture-1": {"fingerprint": "fingerprint", "messageId": "789"}}
+            store.save_reminder_messages(reminders)
+            self.assertEqual(store.load_reminder_messages(), reminders)
 
 
 if __name__ == "__main__":

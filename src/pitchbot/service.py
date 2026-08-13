@@ -119,6 +119,7 @@ class SyncEngine:
             state_store = StateStore(self.config.state_path)
             known_events = state_store.load_events()
             known_reminders = state_store.load_reminders()
+            reminder_messages = state_store.load_reminder_messages()
             notifications_sent = 0
             dashboard_updated = False
             if not dry_run and self.config.can_publish:
@@ -142,17 +143,29 @@ class SyncEngine:
                         ))
                         notifications_sent += 1
                 local_today = datetime.now(self.config.timezone).date()
-                for match in result.matches:
-                    key = match.identity
-                    fingerprint = event_fingerprint(match)
-                    if match.cancelled or not weekend_reminder_due(match, local_today):
-                        continue
-                    if known_reminders.get(key) == fingerprint:
-                        continue
-                    client.publish_new(build_weekend_reminder_payload(match, self.config))
-                    known_reminders[key] = fingerprint
+                due_matches = [
+                    match for match in result.matches
+                    if not match.cancelled and weekend_reminder_due(match, local_today)
+                ]
+                due_matches.sort(key=lambda match: (match.match_date, match.kick_off or datetime.min.time()))
+                current_reminder = due_matches[0] if due_matches else None
+                current_key = current_reminder.identity if current_reminder else ""
+                current_fingerprint = event_fingerprint(current_reminder) if current_reminder else ""
+                for key, reminder in list(reminder_messages.items()):
+                    if key != current_key or reminder.get("fingerprint") != current_fingerprint:
+                        client.delete(reminder.get("messageId", ""))
+                        reminder_messages.pop(key, None)
+                        notifications_sent += 1
+                if current_reminder and current_key not in reminder_messages:
+                    message_id = client.publish_new(build_weekend_reminder_payload(current_reminder, self.config))
+                    reminder_messages[current_key] = {
+                        "fingerprint": current_fingerprint,
+                        "messageId": message_id,
+                    }
                     notifications_sent += 1
+                known_reminders = {key: value["fingerprint"] for key, value in reminder_messages.items()}
                 state_store.save_events(current_events, known_reminders)
+                state_store.save_reminder_messages(reminder_messages)
             published = dashboard_updated or notifications_sent > 0
 
             success_at = _utc_now()
