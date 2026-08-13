@@ -7,12 +7,12 @@ The default configuration is ready for:
 - Club: SV Aich / SV 07 Aich
 - FUSSBALL.DE club ID: `00ES8GNA1O000099VV0AG08LVUPGND5I`
 - Pitch: Sportplatz Aich, Heideweg 60, 72631 Aichtal
-- Refresh interval: every 6 hours
+- Cloud refresh: twice daily, around 07:00 and 19:00 German local time
 - Planning window: 365 days
 
 ## Automatic GitHub Actions hosting
 
-The repository includes a GitHub Actions workflow that runs every six hours at minute 17. It can also be started manually from the repository's **Actions** page. This is the recommended deployment: it works while personal computers are turned off and requires no Discord bot token or public server.
+The repository includes a GitHub Actions workflow that runs twice daily, around 07:00 and 19:00 German local time, including daylight-saving changes. It can also be started manually from the repository's **Actions** page. This is the recommended deployment: it works while personal computers are turned off and requires no Discord bot token or public server.
 
 Store the Discord webhook as the repository secret `DISCORD_WEBHOOK_URL`. The non-secret notification history in `data/state.json` is committed by the workflow only when it changes. This prevents duplicate messages across short-lived GitHub runners.
 
@@ -30,6 +30,8 @@ The workflow needs **Read and write permissions** for repository contents so it 
 6. Double-click `start.cmd`. Keep the visible window open while the bot should run.
 
 On the first successful publish, the service posts one message per currently known home fixture. Repeated checks stay silent when nothing changed. A changed fixture creates one additional change notification while existing channel history remains intact.
+
+For Saturday or Sunday fixtures, the service posts one additional warning on the preceding Wednesday. The reminder is stored separately, so later checks do not repeat it unless the fixture itself changes.
 
 To start it automatically after Windows sign-in, double-click `install-startup.cmd`. The service still opens in a visible window so it is obvious that it is running and can be stopped. `uninstall-startup.cmd` removes that shortcut.
 

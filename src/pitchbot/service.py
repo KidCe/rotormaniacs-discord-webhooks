@@ -13,7 +13,12 @@ from .config import Config
 from .discord_client import DiscordWebhookClient, StateStore
 from .fussball import FussballScheduleClient
 from .models import SourceResult
-from .render import build_event_payload, event_fingerprint
+from .render import (
+    build_event_payload,
+    build_weekend_reminder_payload,
+    event_fingerprint,
+    weekend_reminder_due,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -112,13 +117,16 @@ class SyncEngine:
             result = self.source.fetch()
             state_store = StateStore(self.config.state_path)
             known_events = state_store.load_events()
+            known_reminders = state_store.load_reminders()
             notifications_sent = 0
             if not dry_run and self.config.can_publish:
                 client = DiscordWebhookClient(
                     self.config.webhook_url,
                     StateStore(self.config.state_path),
                 )
-                for match in result.matches:
+                # On a fresh channel, post later fixtures first so the nearest
+                # upcoming fixture is the most recent and easiest to see.
+                for match in reversed(result.matches):
                     key = match.identity
                     fingerprint = event_fingerprint(match)
                     if known_events.get(key) == fingerprint:
@@ -131,7 +139,18 @@ class SyncEngine:
                     ))
                     known_events[key] = fingerprint
                     notifications_sent += 1
-                state_store.save_events(known_events)
+                local_today = datetime.now(self.config.timezone).date()
+                for match in result.matches:
+                    key = match.identity
+                    fingerprint = event_fingerprint(match)
+                    if match.cancelled or not weekend_reminder_due(match, local_today):
+                        continue
+                    if known_reminders.get(key) == fingerprint:
+                        continue
+                    client.publish_new(build_weekend_reminder_payload(match, self.config))
+                    known_reminders[key] = fingerprint
+                    notifications_sent += 1
+                state_store.save_events(known_events, known_reminders)
             published = notifications_sent > 0
 
             success_at = _utc_now()

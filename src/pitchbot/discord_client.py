@@ -37,6 +37,15 @@ class StateStore:
             raise DiscordError("The local Discord event state is unreadable.") from exc
         return {str(key): str(fingerprint) for key, fingerprint in value.get("events", {}).items()}
 
+    def load_reminders(self) -> dict[str, str]:
+        if not self.path.exists():
+            return {}
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise DiscordError("The local Discord reminder state is unreadable.") from exc
+        return {str(key): str(fingerprint) for key, fingerprint in value.get("reminders", {}).items()}
+
     def save(self, message_id: str, payload: dict[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -49,7 +58,7 @@ class StateStore:
         temporary.write_text(json.dumps(state, indent=2), encoding="utf-8")
         os.replace(temporary, self.path)
 
-    def save_events(self, events: dict[str, str]) -> None:
+    def save_events(self, events: dict[str, str], reminders: dict[str, str] | None = None) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         current = {}
         if self.path.exists():
@@ -58,6 +67,8 @@ class StateStore:
             except (OSError, json.JSONDecodeError):
                 current = {}
         current["events"] = events
+        if reminders is not None:
+            current["reminders"] = reminders
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(json.dumps(current, indent=2), encoding="utf-8")
         os.replace(temporary, self.path)
