@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from .config import Config
 from .models import Match, SourceResult
@@ -12,6 +12,18 @@ DESCRIPTION_LIMIT = 3900
 
 def event_fingerprint(match: Match) -> str:
     return "|".join((match.match_date.isoformat(), str(match.kick_off), match.home_team, match.away_team, match.venue, match.status))
+
+
+def weekend_reminder_date(match: Match) -> date | None:
+    if match.match_date.weekday() not in {5, 6}:
+        return None
+    saturday = match.match_date - timedelta(days=match.match_date.weekday() - 5)
+    return saturday - timedelta(days=3)
+
+
+def weekend_reminder_due(match: Match, today: date) -> bool:
+    reminder_date = weekend_reminder_date(match)
+    return reminder_date is not None and reminder_date <= today <= match.match_date
 
 
 def _escape(value: str) -> str:
@@ -81,21 +93,50 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
     }
 
 
+def _fixture_fields(match: Match, config: Config) -> list[dict[str, object]]:
+    when = match.match_date.strftime("%A, %d %B %Y")
+    if match.kick_off:
+        local_start = datetime.combine(match.match_date, match.kick_off, config.timezone)
+        when = f"<t:{int(local_start.timestamp())}:F>\n<t:{int(local_start.timestamp())}:R>"
+    return [
+        {"name": "Fixture", "value": f"**{_escape(match.home_team)}**\nvs\n**{_escape(match.away_team)}**", "inline": True},
+        {"name": "Kick-off", "value": when, "inline": True},
+        {"name": "Venue", "value": _escape(match.venue or config.venue_display_name), "inline": False},
+    ]
+
+
 def build_event_payload(match: Match, config: Config, *, changed: bool = False, cancelled: bool = False) -> dict[str, object]:
     if cancelled:
-        title = "🚫 SV Aich home fixture cancelled"
-        color = 0x95A5A6
-        description = f"**{_escape(match.home_team)} vs {_escape(match.away_team)}**\nThe fixture scheduled for **{match.match_date.strftime('%d.%m.%Y')}** has been cancelled."
+        title = "🚫 HOME FIXTURE CANCELLED"
+        color = 0xE74C3C
+        description = "This fixture no longer occupies Sportplatz Aich."
     else:
-        title = "🔔 SV Aich home fixture changed" if changed else "⚽ SV Aich home fixture"
-        color = 0xF1C40F if changed else 0x2ECC71
-        when = match.match_date.strftime('%d.%m.%Y')
-        if match.kick_off:
-            when += f" at {match.kick_off.strftime('%H:%M')}"
-        description = f"**{_escape(match.home_team)} vs {_escape(match.away_team)}**\n{when}\n{_escape(match.venue or config.venue_display_name)}"
+        title = "🔔 HOME FIXTURE UPDATED" if changed else "⚽ SV AICH HOME FIXTURE"
+        color = 0xF1C40F if changed else 0x2E8B57
+        description = "Sportplatz Aich is occupied for this scheduled match."
+    embed: dict[str, object] = {
+        "title": title,
+        "description": description,
+        "color": color,
+        "fields": _fixture_fields(match, config),
+        "footer": {"text": "Automatic update • Source: FUSSBALL.DE"},
+    }
     if match.url:
-        description += f"\n[Open fixture on FUSSBALL.DE]({match.url})"
-    return {"username": "SV Aich Spielplan", "allowed_mentions": {"parse": []}, "embeds": [{"title": title, "description": description, "color": color}]}
+        embed["url"] = match.url
+    return {"username": "SV Aich Spielplan", "allowed_mentions": {"parse": []}, "embeds": [embed]}
+
+
+def build_weekend_reminder_payload(match: Match, config: Config) -> dict[str, object]:
+    embed: dict[str, object] = {
+        "title": "⚠️ THIS WEEKEND: PITCH OCCUPIED",
+        "description": "Plan your flying accordingly — a home fixture is scheduled at Sportplatz Aich this weekend.",
+        "color": 0xE67E22,
+        "fields": _fixture_fields(match, config),
+        "footer": {"text": "Weekend reminder • Source: FUSSBALL.DE"},
+    }
+    if match.url:
+        embed["url"] = match.url
+    return {"username": "SV Aich Spielplan", "allowed_mentions": {"parse": []}, "embeds": [embed]}
 
 
 def plain_preview(result: SourceResult, config: Config) -> str:

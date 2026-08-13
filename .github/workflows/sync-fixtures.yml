@@ -2,7 +2,8 @@ name: Sync SV Aich fixtures
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    # Cover German summer and winter time; the first step keeps only 07:07/19:07 local time.
+    - cron: "7 5,6,17,18 * * *"
   workflow_dispatch:
 
 permissions:
@@ -17,19 +18,38 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Select German 07:00 and 19:00 runs
+        id: schedule
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            local_hour="$(TZ=Europe/Berlin date +%H)"
+            if [ "$local_hour" = "07" ] || [ "$local_hour" = "19" ]; then
+              echo "run=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "run=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
       - name: Check out repository
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/checkout@v7
 
       - name: Set up Python
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
+        if: steps.schedule.outputs.run == 'true'
         run: python -m pip install --disable-pip-version-check -r requirements.txt
 
       - name: Verify webhook configuration
+        if: steps.schedule.outputs.run == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
@@ -39,12 +59,14 @@ jobs:
           fi
 
       - name: Check FUSSBALL.DE and notify Discord
+        if: steps.schedule.outputs.run == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PUBLISH_ENABLED: "true"
         run: python run.py sync
 
       - name: Persist notification state
+        if: steps.schedule.outputs.run == 'true'
         run: |
           if git diff --quiet -- data/state.json; then
             echo "Notification state is unchanged."
