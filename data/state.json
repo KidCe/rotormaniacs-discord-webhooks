@@ -1,15 +1,4 @@
 {
-  "events": {
-    "350245003": "2026-08-30|15:00:00|SV 07 Aich|SGM Altdorf II / Gro\u00dfbettlingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245017": "2026-09-13|15:00:00|SV 07 Aich|N\u00fcrtinger Kickers|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245031": "2026-09-27|15:00:00|SV 07 Aich|SV Nabern II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245045": "2026-10-11|15:00:00|SV 07 Aich|TSV Neckartenzlingen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245101": "2027-03-14|15:00:00|SV 07 Aich|TSV Neckartailfingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245113": "2027-04-04|15:00:00|SV 07 Aich|TSV \u00d6tlingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245132": "2027-04-18|15:00:00|SV 07 Aich|SGM H\u00f6llbach II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245144": "2027-05-02|15:00:00|SV 07 Aich|TV Bempflingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245148": "2027-05-09|15:00:00|SV 07 Aich|TB Neckarhausen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245168": "2027-05-23|15:00:00|SV 07 Aich|SPV 05 N\u00fcrtingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-    "350245180": "2027-06-05|15:30:00|SV 07 Aich|SGM Raidwangen II/Oberensingen III|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|"
-  }
+  "events": {},
+  "reminders": {}
 }
