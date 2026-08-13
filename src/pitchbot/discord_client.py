@@ -56,6 +56,22 @@ class StateStore:
             raise DiscordError("The local Discord reminder state is unreadable.") from exc
         return {str(key): str(fingerprint) for key, fingerprint in value.get("reminders", {}).items()}
 
+    def load_reminder_messages(self) -> dict[str, dict[str, str]]:
+        if not self.path.exists():
+            return {}
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise DiscordError("The local Discord message state is unreadable.") from exc
+        result: dict[str, dict[str, str]] = {}
+        for key, reminder in value.get("reminderMessages", {}).items():
+            if isinstance(reminder, dict):
+                result[str(key)] = {
+                    "fingerprint": str(reminder.get("fingerprint", "")),
+                    "messageId": str(reminder.get("messageId", "")),
+                }
+        return result
+
     def save(self, message_id: str, payload: dict[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -85,6 +101,20 @@ class StateStore:
         current["events"] = events
         if reminders is not None:
             current["reminders"] = reminders
+        temporary = self.path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(current, indent=2), encoding="utf-8")
+        os.replace(temporary, self.path)
+
+    def save_reminder_messages(self, reminders: dict[str, dict[str, str]]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        current = {}
+        if self.path.exists():
+            try:
+                current = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                current = {}
+        current["reminderMessages"] = reminders
+        current["reminders"] = {key: value["fingerprint"] for key, value in reminders.items()}
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(json.dumps(current, indent=2), encoding="utf-8")
         os.replace(temporary, self.path)
@@ -132,8 +162,17 @@ class DiscordWebhookClient:
             raise DiscordError("Discord accepted the webhook but returned no message ID.")
         return message_id
 
-    def _request(self, method: str, url: str, payload: dict[str, object]) -> dict[str, object]:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    def delete(self, message_id: str) -> None:
+        if not message_id:
+            return
+        try:
+            self._request("DELETE", f"{self.webhook_url}/messages/{message_id}", None)
+        except DiscordError as exc:
+            if "HTTP 404" not in str(exc):
+                raise
+
+    def _request(self, method: str, url: str, payload: dict[str, object] | None) -> dict[str, object]:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload is not None else None
         request = Request(
             url,
             data=body,

@@ -31,7 +31,7 @@ The workflow needs **Read and write permissions** for repository contents so it 
 
 On the first successful publish, the service creates one dashboard message containing all currently known home fixtures in chronological order. The nearest fixture is shown at the top. Later runs edit that same message; they do not append another fixture list to the channel. If the dashboard is unchanged, Discord is not contacted at all. A changed or explicitly cancelled known fixture creates one additional notification.
 
-For Saturday or Sunday fixtures, the service posts one additional warning on the preceding Wednesday. The reminder is stored separately, so later checks do not repeat it unless the fixture itself changes.
+For Saturday or Sunday fixtures, the service posts one additional warning on the preceding Wednesday. The reminder message ID is stored separately, so later checks do not repeat it. After that weekend fixture has passed, the next check deletes the old reminder; if another upcoming weekend fixture is already due, only its reminder remains.
 
 To start it automatically after Windows sign-in, double-click `install-startup.cmd`. The service still opens in a visible window so it is obvious that it is running and can be stopped. `uninstall-startup.cmd` removes that shortcut.
 
