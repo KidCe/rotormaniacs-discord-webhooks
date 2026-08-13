@@ -28,6 +28,16 @@ class StateStore:
         message_id = value.get("messageId", "")
         return str(message_id) if message_id else ""
 
+    def load_payload_sha256(self) -> str:
+        if not self.path.exists():
+            return ""
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise DiscordError("The local Discord message state is unreadable.") from exc
+        payload_sha256 = value.get("payloadSha256", "")
+        return str(payload_sha256) if payload_sha256 else ""
+
     def load_events(self) -> dict[str, str]:
         if not self.path.exists():
             return {}
@@ -49,11 +59,17 @@ class StateStore:
     def save(self, message_id: str, payload: dict[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
-        state = {
+        state = {}
+        if self.path.exists():
+            try:
+                state = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                state = {}
+        state.update({
             "messageId": message_id,
             "lastPublishedAt": datetime.now(timezone.utc).isoformat(),
             "payloadSha256": hashlib.sha256(serialized).hexdigest(),
-        }
+        })
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(json.dumps(state, indent=2), encoding="utf-8")
         os.replace(temporary, self.path)
@@ -79,9 +95,15 @@ class DiscordWebhookClient:
         self.webhook_url = self._without_query(webhook_url)
         self.state_store = state_store
         self.timeout_seconds = timeout_seconds
+        self.last_operation = "unchanged"
 
     def publish(self, payload: dict[str, object]) -> str:
         message_id = self.state_store.load_message_id()
+        serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        payload_sha256 = hashlib.sha256(serialized).hexdigest()
+        if message_id and self.state_store.load_payload_sha256() == payload_sha256:
+            self.last_operation = "unchanged"
+            return message_id
         if message_id:
             try:
                 edit_payload = {
@@ -89,6 +111,7 @@ class DiscordWebhookClient:
                 }
                 self._request("PATCH", f"{self.webhook_url}/messages/{message_id}?wait=true", edit_payload)
                 self.state_store.save(message_id, payload)
+                self.last_operation = "updated"
                 return message_id
             except DiscordError as exc:
                 if "HTTP 404" not in str(exc):
@@ -99,6 +122,7 @@ class DiscordWebhookClient:
         if not new_message_id:
             raise DiscordError("Discord accepted the webhook but returned no message ID.")
         self.state_store.save(new_message_id, payload)
+        self.last_operation = "created"
         return new_message_id
 
     def publish_new(self, payload: dict[str, object]) -> str:

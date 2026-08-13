@@ -40,8 +40,13 @@ def main(argv: list[str] | None = None) -> int:
         print(plain_preview(result, config))
         if args.dry_run:
             print("\nDry run complete. Discord was not changed.")
-        elif config.can_publish and outcome["notificationsSent"]:
-            print(f"\nSent {outcome['notificationsSent']} Discord notification(s).")
+        elif config.can_publish and (outcome["dashboardUpdated"] or outcome["notificationsSent"]):
+            details = []
+            if outcome["dashboardUpdated"]:
+                details.append("updated the dashboard")
+            if outcome["notificationsSent"]:
+                details.append(f"sent {outcome['notificationsSent']} notification(s)")
+            print(f"\nDiscord changed: {' and '.join(details)}.")
         elif config.can_publish:
             print("\nNo changes found. Discord was not changed.")
         else:

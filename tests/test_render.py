@@ -33,15 +33,16 @@ class DiscordRenderTests(unittest.TestCase):
         )
         payload = build_discord_payload(result, self.config)
         embed = payload["embeds"][0]
-        self.assertIn("Pitch occupied", embed["title"])
-        self.assertIn("Eich vs Guests", embed["description"])
+        self.assertIn("dashboard", embed["title"])
+        self.assertIn("Eich vs Guests", embed["fields"][0]["value"])
+        self.assertIn("NEXT", embed["fields"][0]["name"])
         self.assertEqual(payload["allowed_mentions"], {"parse": []})
         self.assertNotIn("discord", payload["username"].casefold())
 
     def test_renders_clear_state(self) -> None:
         result = SourceResult((), 4, datetime.now(timezone.utc), "https://www.fussball.de/example")
         payload = build_discord_payload(result, self.config)
-        self.assertEqual(payload["embeds"][0]["title"], "Pitch currently clear")
+        self.assertIn("Pitch currently clear", payload["embeds"][0]["title"])
 
     def test_renders_structured_fixture_card(self) -> None:
         match = Match(date(2026, 8, 30), time(15), "SV 07 Aich", "Guests", "League", "ME", "42", "Sportplatz Aich", "https://example.test")

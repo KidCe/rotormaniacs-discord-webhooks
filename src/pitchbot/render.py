@@ -43,33 +43,52 @@ def _match_block(match: Match, config: Config) -> str:
 
 
 def build_discord_payload(result: SourceResult, config: Config) -> dict[str, object]:
-    intro = (
-        f"These matches occupy **{_escape(config.venue_display_name)}**. "
-        "The list is refreshed automatically."
+    matches = sorted(
+        result.matches[: config.max_events],
+        key=lambda match: (match.match_date, match.kick_off or datetime.min.time()),
     )
-    blocks: list[str] = []
-    visible_count = 0
-    for match in result.matches[: config.max_events]:
-        candidate = _match_block(match, config)
-        proposed = intro + "\n\n" + "\n\n".join([*blocks, candidate])
-        if len(proposed) > DESCRIPTION_LIMIT:
-            break
-        blocks.append(candidate)
-        visible_count += 1
+    fields: list[dict[str, object]] = []
+    for index, match in enumerate(matches):
+        if match.kick_off is not None:
+            local_start = datetime.combine(match.match_date, match.kick_off, config.timezone)
+            timestamp = int(local_start.timestamp())
+            when = f"<t:{timestamp}:D> · <t:{timestamp}:t>"
+        else:
+            when = f"{match.match_date.strftime('%d.%m.%Y')} · time not confirmed"
+        label = f"NEXT · {when}" if index == 0 else when
+        status = "\n**CANCELLED**" if match.cancelled else ""
+        source = f"[Open on FUSSBALL.DE]({match.url})" if match.url else "FUSSBALL.DE"
+        fields.append({
+            "name": label,
+            "value": (
+                f"**{_escape(match.home_team)} vs {_escape(match.away_team)}**{status}\n"
+                f"{_escape(match.venue or config.venue_display_name)} · {source}"
+            ),
+            "inline": False,
+        })
 
-    if blocks:
-        description = intro + "\n\n" + "\n\n".join(blocks)
+    if fields:
+        first = matches[0]
+        if first.kick_off is not None:
+            next_start = datetime.combine(first.match_date, first.kick_off, config.timezone)
+            next_text = f"The next home fixture starts <t:{int(next_start.timestamp())}:R>."
+        else:
+            next_text = "The next home fixture is listed first below."
+        description = (
+            f"{next_text}\nAll known fixtures at **{_escape(config.venue_display_name)}**, "
+            "ordered from nearest to furthest away."
+        )
         color = 0xE74C3C
-        title = "Pitch occupied — upcoming home fixtures"
+        title = "SV Aich — Home fixture dashboard"
     else:
         description = (
             f"No scheduled matches at **{_escape(config.venue_display_name)}** were found "
             f"for the next {config.lookahead_days} days."
         )
         color = 0x2ECC71
-        title = "Pitch currently clear"
+        title = "SV Aich — Pitch currently clear"
 
-    omitted = len(result.matches) - visible_count
+    omitted = len(result.matches) - len(fields)
     footer = (
         f"Source: FUSSBALL.DE · {result.source_match_count} club fixtures checked · "
         f"{config.lookahead_days}-day window"
@@ -86,8 +105,8 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
                 "description": description,
                 "url": result.source_url,
                 "color": color,
+                "fields": fields,
                 "footer": {"text": footer},
-                "timestamp": result.fetched_at.isoformat().replace("+00:00", "Z"),
             }
         ],
     }
