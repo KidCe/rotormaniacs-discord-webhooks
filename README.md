@@ -1,6 +1,6 @@
 # SV Aich Discord Bot
 
-This small service publishes event-based Discord notifications for SV Aich home fixtures. It reads the SV Aich club schedule from FUSSBALL.DE, checks each actual venue, and stays silent when nothing changed. New fixtures, changed fixtures, and explicitly marked cancellations create notifications in Discord.
+This small service maintains one chronological Discord dashboard for SV Aich home fixtures. It reads the SV Aich club schedule from FUSSBALL.DE, checks each actual venue, and silently edits the same dashboard message only when its contents change. Separate messages are reserved for meaningful fixture changes, explicit cancellations, and weekend reminders.
 
 The default configuration is ready for:
 
@@ -29,7 +29,7 @@ The workflow needs **Read and write permissions** for repository contents so it 
 5. Double-click `preview.cmd`. It performs a live read but never changes Discord.
 6. Double-click `start.cmd`. Keep the visible window open while the bot should run.
 
-On the first successful publish, the service posts one message per currently known home fixture. Repeated checks stay silent when nothing changed. A changed fixture creates one additional change notification while existing channel history remains intact.
+On the first successful publish, the service creates one dashboard message containing all currently known home fixtures in chronological order. The nearest fixture is shown at the top. Later runs edit that same message; they do not append another fixture list to the channel. If the dashboard is unchanged, Discord is not contacted at all. A changed or explicitly cancelled known fixture creates one additional notification.
 
 For Saturday or Sunday fixtures, the service posts one additional warning on the preceding Wednesday. The reminder is stored separately, so later checks do not repeat it unless the fixture itself changes.
 
@@ -43,7 +43,7 @@ To start it automatically after Windows sign-in, double-click `install-startup.c
 - `http://127.0.0.1:8781` — local status page while the service is running.
 - `POST http://127.0.0.1:8781/refresh` — request an immediate background refresh.
 
-The known fixture fingerprints are stored in `data/state.json`. Keep this file when moving the service so previously announced fixtures are not posted again.
+The dashboard message ID, known fixture fingerprints, and reminder history are stored in `data/state.json`. Keep this file when moving the service so the existing dashboard can be edited and notifications are not repeated.
 
 ## Move to another Windows computer
 

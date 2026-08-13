@@ -14,6 +14,7 @@ from .discord_client import DiscordWebhookClient, StateStore
 from .fussball import FussballScheduleClient
 from .models import SourceResult
 from .render import (
+    build_discord_payload,
     build_event_payload,
     build_weekend_reminder_payload,
     event_fingerprint,
@@ -119,26 +120,27 @@ class SyncEngine:
             known_events = state_store.load_events()
             known_reminders = state_store.load_reminders()
             notifications_sent = 0
+            dashboard_updated = False
             if not dry_run and self.config.can_publish:
                 client = DiscordWebhookClient(
                     self.config.webhook_url,
                     StateStore(self.config.state_path),
                 )
-                # On a fresh channel, post later fixtures first so the nearest
-                # upcoming fixture is the most recent and easiest to see.
-                for match in reversed(result.matches):
+                client.publish(build_discord_payload(result, self.config))
+                dashboard_updated = client.last_operation in {"created", "updated"}
+                current_events: dict[str, str] = {}
+                for match in result.matches:
                     key = match.identity
                     fingerprint = event_fingerprint(match)
-                    if known_events.get(key) == fingerprint:
-                        continue
-                    client.publish_new(build_event_payload(
-                        match,
-                        self.config,
-                        changed=key in known_events,
-                        cancelled=match.cancelled,
-                    ))
-                    known_events[key] = fingerprint
-                    notifications_sent += 1
+                    current_events[key] = fingerprint
+                    if key in known_events and known_events[key] != fingerprint:
+                        client.publish_new(build_event_payload(
+                            match,
+                            self.config,
+                            changed=True,
+                            cancelled=match.cancelled,
+                        ))
+                        notifications_sent += 1
                 local_today = datetime.now(self.config.timezone).date()
                 for match in result.matches:
                     key = match.identity
@@ -150,8 +152,8 @@ class SyncEngine:
                     client.publish_new(build_weekend_reminder_payload(match, self.config))
                     known_reminders[key] = fingerprint
                     notifications_sent += 1
-                state_store.save_events(known_events, known_reminders)
-            published = notifications_sent > 0
+                state_store.save_events(current_events, known_reminders)
+            published = dashboard_updated or notifications_sent > 0
 
             success_at = _utc_now()
             if published:
@@ -160,6 +162,9 @@ class SyncEngine:
             elif dry_run:
                 state = "ready"
                 message = f"Preview completed with {len(result.matches)} pitch occupancies"
+            elif self.config.can_publish:
+                state = "ready"
+                message = f"Discord was already up to date with {len(result.matches)} pitch occupancies"
             else:
                 state = "setup_required"
                 message = "Schedule read succeeded; Discord publishing is not configured"
@@ -178,7 +183,10 @@ class SyncEngine:
                 len(result.matches),
                 " and Discord was updated" if published else "",
             )
-            return result, {"notificationsSent": notifications_sent}
+            return result, {
+                "dashboardUpdated": dashboard_updated,
+                "notificationsSent": notifications_sent,
+            }
         except Exception as exc:
             safe_message = str(exc) or exc.__class__.__name__
             self.status.update(state="error", message="The last refresh failed", last_error=safe_message)

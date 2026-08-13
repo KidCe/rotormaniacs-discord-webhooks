@@ -41,6 +41,16 @@ class DiscordWebhookClientTests(unittest.TestCase):
             self.assertNotIn("username", client.requests[0][2])
             self.assertNotIn("avatar_url", client.requests[0][2])
 
+    def test_unchanged_dashboard_does_not_call_discord_again(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = StateStore(Path(directory) / "state.json")
+            payload = {"username": "Pitch Bot", "embeds": []}
+            store.save("456", payload)
+            client = RecordingClient(store)
+            self.assertEqual(client.publish(payload), "456")
+            self.assertEqual(client.requests, [])
+            self.assertEqual(client.last_operation, "unchanged")
+
 
 if __name__ == "__main__":
     unittest.main()
