@@ -39,9 +39,9 @@ class ScheduleParserTests(unittest.TestCase):
         self.config = Config.load(ROOT / ".env.example")
         self.client = FussballScheduleClient(self.config)
 
-    def test_includes_only_the_configured_eich_venue(self) -> None:
+    def test_includes_only_the_configured_aich_venue(self) -> None:
         matches, source_count = self.client.parse(
-            fixture("Saturday, 15.08.2026 - 16:00", "Eich Rasenplatz | Im Wäldchen 1 | 67575 Eich"),
+            fixture("Saturday, 15.08.2026 - 16:00", "Sportplatz Aich | Heideweg 60 | 72631 Aichtal"),
             date(2026, 8, 1),
             date(2026, 12, 31),
         )
@@ -57,17 +57,18 @@ class ScheduleParserTests(unittest.TestCase):
         )
         self.assertEqual(matches, [])
 
-    def test_rejects_cancelled_fixture(self) -> None:
+    def test_marks_cancelled_fixture_for_notification(self) -> None:
         matches, _ = self.client.parse(
-            fixture("15.08.2026 | 16:00", "Eich Rasenplatz | Im Wäldchen 1 | 67575 Eich", "Absetzung"),
+            fixture("15.08.2026 | 16:00", "Sportplatz Aich | Heideweg 60 | 72631 Aichtal", "Absetzung"),
             date(2026, 8, 1),
             date(2026, 12, 31),
         )
-        self.assertEqual(matches, [])
+        self.assertEqual(len(matches), 1)
+        self.assertTrue(matches[0].cancelled)
 
     def test_skips_fixture_without_a_confirmed_date(self) -> None:
         matches, source_count = self.client.parse(
-            fixture("", "Eich Rasenplatz | Im Wäldchen 1 | 67575 Eich"),
+            fixture("", "Sportplatz Aich | Heideweg 60 | 72631 Aichtal"),
             date(2026, 8, 1),
             date(2026, 12, 31),
         )
@@ -85,11 +86,11 @@ class ScheduleParserTests(unittest.TestCase):
             <td class="column-score"><a href="https://www.fussball.de/spiel/example-2/-/spiel/DEF"></a></td>
           </tr>
           <tr class="row-venue hidden-small"><td></td><td>
-            <div>Spielstätte:Eich Rasenplatz | Im Wäldchen 1 | 67575 Eich</div>
+            <div>Spielstätte:Sportplatz Aich | Heideweg 60 | 72631 Aichtal</div>
           </td></tr>
         """
         html = fixture(
-            "15.08.26 | 16:00", "Eich Rasenplatz | Im Wäldchen 1 | 67575 Eich"
+            "15.08.26 | 16:00", "Sportplatz Aich | Heideweg 60 | 72631 Aichtal"
         ).replace("</tbody>", second_fixture + "</tbody>")
         matches, source_count = self.client.parse(html, date(2026, 8, 1), date(2026, 12, 31))
         self.assertEqual(source_count, 2)

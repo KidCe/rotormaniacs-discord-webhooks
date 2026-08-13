@@ -1,18 +1,24 @@
-# SV 07 Eich Pitch Bot
+# SV Aich Discord Bot
 
-This small service keeps one Discord message up to date with the days on which the football pitch in Eich is occupied by a scheduled match. It reads the FC Germania 1907 Eich club schedule from FUSSBALL.DE, checks the actual venue of every fixture, excludes cancelled fixtures, and only publishes matches at the configured Eich pitch.
+This small service publishes event-based Discord notifications for SV Aich home fixtures. It reads the SV Aich club schedule from FUSSBALL.DE, checks each actual venue, and stays silent when nothing changed. New fixtures, changed fixtures, and explicitly marked cancellations create notifications in Discord.
 
 The default configuration is ready for:
 
-- Club: FC Germania 1907 Eich
-- FUSSBALL.DE club ID: `00ES8GNBB000003AVV0AG08LVUPGND5I`
-- Pitch: Eich Rasenplatz, Im Wäldchen 1, 67575 Eich
+- Club: SV Aich / SV 07 Aich
+- FUSSBALL.DE club ID: `00ES8GNA1O000099VV0AG08LVUPGND5I`
+- Pitch: Sportplatz Aich, Heideweg 60, 72631 Aichtal
 - Refresh interval: every 6 hours
 - Planning window: 365 days
 
-## Important runtime note
+## Automatic GitHub Actions hosting
 
-Discord cannot host or execute this code. The bot must run on a Windows computer, home server, NAS, VPS, or Docker host that stays online. Discord receives updates through a channel webhook; no Discord bot token and no public inbound port are required.
+The repository includes a GitHub Actions workflow that runs every six hours at minute 17. It can also be started manually from the repository's **Actions** page. This is the recommended deployment: it works while personal computers are turned off and requires no Discord bot token or public server.
+
+Store the Discord webhook as the repository secret `DISCORD_WEBHOOK_URL`. The non-secret notification history in `data/state.json` is committed by the workflow only when it changes. This prevents duplicate messages across short-lived GitHub runners.
+
+The workflow needs **Read and write permissions** for repository contents so it can persist that state file.
+
+## Optional local Windows setup
 
 ## Quick setup on Windows
 
@@ -23,7 +29,7 @@ Discord cannot host or execute this code. The bot must run on a Windows computer
 5. Double-click `preview.cmd`. It performs a live read but never changes Discord.
 6. Double-click `start.cmd`. Keep the visible window open while the bot should run.
 
-On the first successful publish, the service creates one Discord message. Later refreshes edit that same message instead of filling the channel with repeated posts.
+On the first successful publish, the service posts one message per currently known home fixture. Repeated checks stay silent when nothing changed. A changed fixture creates one additional change notification while existing channel history remains intact.
 
 To start it automatically after Windows sign-in, double-click `install-startup.cmd`. The service still opens in a visible window so it is obvious that it is running and can be stopped. `uninstall-startup.cmd` removes that shortcut.
 
@@ -35,7 +41,7 @@ To start it automatically after Windows sign-in, double-click `install-startup.c
 - `http://127.0.0.1:8781` — local status page while the service is running.
 - `POST http://127.0.0.1:8781/refresh` — request an immediate background refresh.
 
-The current Discord message ID is stored in `data/state.json`. Keep this file when moving the service if the new computer should continue editing the existing Discord message. If it is missing, the service safely creates a new message.
+The known fixture fingerprints are stored in `data/state.json`. Keep this file when moving the service so previously announced fixtures are not posted again.
 
 ## Move to another Windows computer
 
@@ -63,9 +69,9 @@ docker compose down
 | --- | --- | --- |
 | `DISCORD_WEBHOOK_URL` | Discord channel webhook; leave empty for read-only operation | empty |
 | `PUBLISH_ENABLED` | Emergency publishing switch | `true` |
-| `FUSSBALL_CLUB_ID` | Club ID from the FUSSBALL.DE URL | FC Germania 1907 Eich ID |
-| `VENUE_MATCH_TERMS` | Semicolon-separated venue fragments; any match counts | Eich pitch name/address |
-| `VENUE_DISPLAY_NAME` | Name shown in Discord | Eich Rasenplatz (Wäldchen Stadium) |
+| `FUSSBALL_CLUB_ID` | Club ID from the FUSSBALL.DE URL | SV Aich ID |
+| `VENUE_MATCH_TERMS` | Semicolon-separated venue fragments; any match counts | Sportplatz Aich name/address |
+| `VENUE_DISPLAY_NAME` | Name shown in Discord | Sportplatz Aich |
 | `LOOKAHEAD_DAYS` | Future planning window | `365` |
 | `SYNC_INTERVAL_MINUTES` | Automatic refresh interval | `360` |
 | `MAX_EVENTS` | Maximum fixtures shown in one Discord message | `25` |
@@ -80,9 +86,9 @@ A match blocks FPV training only when all of these conditions are true:
 1. It appears in the configured club schedule on FUSSBALL.DE.
 2. Its actual listed venue contains one of `VENUE_MATCH_TERMS`.
 3. Its date is inside the configured future window.
-4. It is not marked as cancelled, abandoned, annulled, a no-show, or a bye.
+4. If it is explicitly marked as cancelled, abandoned, annulled, or a no-show, it is retained long enough to publish a cancellation notice.
 
-This venue check is intentional: FC Germania teams and joint teams can have nominal home fixtures in Hamm or Rheindürkheim, which do not occupy the Eich pitch.
+This venue check is intentional: SV Aich teams can have fixtures at other venues, which do not occupy Sportplatz Aich.
 
 ## Reliability and source limits
 
