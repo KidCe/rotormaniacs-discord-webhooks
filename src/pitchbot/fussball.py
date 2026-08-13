@@ -19,7 +19,7 @@ from .models import Match, SourceResult
 
 
 LOGGER = logging.getLogger(__name__)
-USER_AGENT = "SV07-Eich-Pitch-Bot/1.0 (private community schedule; low-frequency access)"
+USER_AGENT = "SV-Aich-Discord-Bot/1.0 (private community schedule; low-frequency access)"
 CANCELLED_TERMS = (
     "absetzung",
     "abgesagt",
@@ -155,8 +155,6 @@ class FussballScheduleClient:
                 continue
             if not self._is_target_venue(match.venue):
                 continue
-            if any(term in _normalized(match.status) for term in CANCELLED_TERMS):
-                continue
             if match.identity in identities:
                 continue
             identities.add(match.identity)
@@ -220,6 +218,7 @@ class FussballScheduleClient:
                     venue = candidate.split(":", 1)[1].strip()
                     break
 
+        cancelled = any(term in _normalized(status) for term in CANCELLED_TERMS)
         return Match(
             match_date=match_date,
             kick_off=kick_off,
@@ -231,6 +230,7 @@ class FussballScheduleClient:
             venue=venue,
             url=game_url,
             status=status,
+            cancelled=cancelled,
         ), match_date
 
     def _decode_date_cell(self, date_cell: Tag) -> str:

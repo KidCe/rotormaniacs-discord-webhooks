@@ -87,12 +87,12 @@ class Config:
             return os.environ.get(name, file_values.get(name, default)).strip()
 
         terms = tuple(part.strip() for part in value(
-            "VENUE_MATCH_TERMS", "Eich Rasenplatz;Im Wäldchen 1;67575 Eich"
+            "VENUE_MATCH_TERMS", "Sportplatz Aich;Heideweg 60;72631 Aichtal"
         ).split(";") if part.strip())
         if not terms:
             raise ConfigError("VENUE_MATCH_TERMS must contain at least one term.")
 
-        club_id = value("FUSSBALL_CLUB_ID", "00ES8GNBB000003AVV0AG08LVUPGND5I")
+        club_id = value("FUSSBALL_CLUB_ID", "00ES8GNA1O000099VV0AG08LVUPGND5I")
         if not re.fullmatch(r"[A-Z0-9]{20,40}", club_id, flags=re.IGNORECASE):
             raise ConfigError("FUSSBALL_CLUB_ID does not look like a valid club ID.")
 
@@ -116,9 +116,9 @@ class Config:
             webhook_url=webhook_url,
             publish_enabled=_bool(value("PUBLISH_ENABLED", "true"), "PUBLISH_ENABLED"),
             club_id=club_id,
-            club_name=value("FUSSBALL_CLUB_NAME", "FC Germania 1907 Eich"),
+            club_name=value("FUSSBALL_CLUB_NAME", "SV Aich"),
             venue_match_terms=terms,
-            venue_display_name=value("VENUE_DISPLAY_NAME", "Eich Rasenplatz (Wäldchen Stadium)"),
+            venue_display_name=value("VENUE_DISPLAY_NAME", "Sportplatz Aich"),
             lookahead_days=_int(value("LOOKAHEAD_DAYS", "365"), "LOOKAHEAD_DAYS", 1, 730),
             sync_interval_minutes=_int(
                 value("SYNC_INTERVAL_MINUTES", "360"), "SYNC_INTERVAL_MINUTES", 15, 10080

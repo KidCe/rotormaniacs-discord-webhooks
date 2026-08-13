@@ -1,4 +1,4 @@
-"""SV 07 Eich pitch occupancy bot."""
+"""SV Aich Discord schedule bot."""
 
 __version__ = "1.0.0"
 

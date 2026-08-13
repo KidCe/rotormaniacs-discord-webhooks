@@ -28,6 +28,15 @@ class StateStore:
         message_id = value.get("messageId", "")
         return str(message_id) if message_id else ""
 
+    def load_events(self) -> dict[str, str]:
+        if not self.path.exists():
+            return {}
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise DiscordError("The local Discord event state is unreadable.") from exc
+        return {str(key): str(fingerprint) for key, fingerprint in value.get("events", {}).items()}
+
     def save(self, message_id: str, payload: dict[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -38,6 +47,19 @@ class StateStore:
         }
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        os.replace(temporary, self.path)
+
+    def save_events(self, events: dict[str, str]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        current = {}
+        if self.path.exists():
+            try:
+                current = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                current = {}
+        current["events"] = events
+        temporary = self.path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(current, indent=2), encoding="utf-8")
         os.replace(temporary, self.path)
 
 
@@ -68,19 +90,28 @@ class DiscordWebhookClient:
         self.state_store.save(new_message_id, payload)
         return new_message_id
 
+    def publish_new(self, payload: dict[str, object]) -> str:
+        response = self._request("POST", f"{self.webhook_url}?wait=true", payload)
+        message_id = str(response.get("id", ""))
+        if not message_id:
+            raise DiscordError("Discord accepted the webhook but returned no message ID.")
+        return message_id
+
     def _request(self, method: str, url: str, payload: dict[str, object]) -> dict[str, object]:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         request = Request(
             url,
             data=body,
             method=method,
-            headers={"Content-Type": "application/json", "User-Agent": "SV07-Eich-Pitch-Bot/1.0"},
+            headers={"Content-Type": "application/json", "User-Agent": "SV-Aich-Discord-Bot/1.0"},
         )
         try:
             with urlopen(request, timeout=self.timeout_seconds) as response:
                 response_body = response.read()
         except HTTPError as exc:
-            raise DiscordError(f"Discord webhook failed with HTTP {exc.code}.") from None
+            details = exc.read().decode("utf-8", errors="replace").strip()
+            suffix = f" Response: {details}" if details else ""
+            raise DiscordError(f"Discord webhook failed with HTTP {exc.code}.{suffix}") from None
         except (URLError, TimeoutError, OSError) as exc:
             raise DiscordError("Discord could not be reached.") from exc
         if not response_body:

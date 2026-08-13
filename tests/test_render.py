@@ -30,6 +30,7 @@ class DiscordRenderTests(unittest.TestCase):
         self.assertIn("Pitch occupied", embed["title"])
         self.assertIn("Eich vs Guests", embed["description"])
         self.assertEqual(payload["allowed_mentions"], {"parse": []})
+        self.assertNotIn("discord", payload["username"].casefold())
 
     def test_renders_clear_state(self) -> None:
         result = SourceResult((), 4, datetime.now(timezone.utc), "https://www.fussball.de/example")

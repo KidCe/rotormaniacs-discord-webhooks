@@ -1,5 +1,5 @@
 @echo off
-title SV 07 Eich Pitch Bot - Preview
+title SV Aich Discord Bot - Preview
 cd /d "%~dp0"
 if not exist ".venv\Scripts\python.exe" (
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\setup.ps1"

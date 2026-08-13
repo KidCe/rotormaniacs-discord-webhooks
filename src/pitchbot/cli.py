@@ -11,7 +11,7 @@ from .service import PitchBotService, RuntimeStatus, SyncEngine
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Publish SV 07 Eich pitch occupancy to Discord.")
+    parser = argparse.ArgumentParser(description="Publish SV Aich home fixtures to Discord.")
     parser.add_argument("--env-file", type=Path, help="Read configuration from this .env file.")
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("serve", help="Run the scheduled service and local status endpoint.")
@@ -35,13 +35,15 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         engine = SyncEngine(config, RuntimeStatus())
-        result, _ = engine.run_once(dry_run=args.dry_run)
+        result, outcome = engine.run_once(dry_run=args.dry_run)
         print()
         print(plain_preview(result, config))
         if args.dry_run:
             print("\nDry run complete. Discord was not changed.")
+        elif config.can_publish and outcome["notificationsSent"]:
+            print(f"\nSent {outcome['notificationsSent']} Discord notification(s).")
         elif config.can_publish:
-            print("\nDiscord message updated.")
+            print("\nNo changes found. Discord was not changed.")
         else:
             print("\nDiscord was not changed because publishing is not configured.")
         return 0

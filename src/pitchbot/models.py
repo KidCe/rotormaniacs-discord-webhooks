@@ -16,6 +16,7 @@ class Match:
     venue: str
     url: str
     status: str = ""
+    cancelled: bool = False
 
     @property
     def identity(self) -> str:

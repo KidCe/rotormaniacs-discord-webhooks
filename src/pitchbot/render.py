@@ -10,6 +10,10 @@ from .models import Match, SourceResult
 DESCRIPTION_LIMIT = 3900
 
 
+def event_fingerprint(match: Match) -> str:
+    return "|".join((match.match_date.isoformat(), str(match.kick_off), match.home_team, match.away_team, match.venue, match.status))
+
+
 def _escape(value: str) -> str:
     return re.sub(r"([\\`*_{}\[\]()<>#+\-.!|])", r"\\\1", value)
 
@@ -62,7 +66,7 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
         footer += f" · {omitted} more matching fixtures not shown"
 
     return {
-        "username": "SV 07 Eich Pitch Bot",
+        "username": "SV Aich Spielplan",
         "allowed_mentions": {"parse": []},
         "embeds": [
             {
@@ -75,6 +79,23 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
             }
         ],
     }
+
+
+def build_event_payload(match: Match, config: Config, *, changed: bool = False, cancelled: bool = False) -> dict[str, object]:
+    if cancelled:
+        title = "🚫 SV Aich home fixture cancelled"
+        color = 0x95A5A6
+        description = f"**{_escape(match.home_team)} vs {_escape(match.away_team)}**\nThe fixture scheduled for **{match.match_date.strftime('%d.%m.%Y')}** has been cancelled."
+    else:
+        title = "🔔 SV Aich home fixture changed" if changed else "⚽ SV Aich home fixture"
+        color = 0xF1C40F if changed else 0x2ECC71
+        when = match.match_date.strftime('%d.%m.%Y')
+        if match.kick_off:
+            when += f" at {match.kick_off.strftime('%H:%M')}"
+        description = f"**{_escape(match.home_team)} vs {_escape(match.away_team)}**\n{when}\n{_escape(match.venue or config.venue_display_name)}"
+    if match.url:
+        description += f"\n[Open fixture on FUSSBALL.DE]({match.url})"
+    return {"username": "SV Aich Spielplan", "allowed_mentions": {"parse": []}, "embeds": [{"title": title, "description": description, "color": color}]}
 
 
 def plain_preview(result: SourceResult, config: Config) -> str:

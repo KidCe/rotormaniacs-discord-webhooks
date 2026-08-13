@@ -13,11 +13,11 @@ from .config import Config
 from .discord_client import DiscordWebhookClient, StateStore
 from .fussball import FussballScheduleClient
 from .models import SourceResult
-from .render import build_discord_payload
+from .render import build_event_payload, event_fingerprint
 
 
 LOGGER = logging.getLogger(__name__)
-LOG_TAG = "sv07-eich-pitch-bot"
+LOG_TAG = "sv-aich-discord-bot"
 
 
 def _utc_now() -> str:
@@ -99,21 +99,40 @@ class SyncEngine:
         self.config = config
         self.status = status
         self.source = FussballScheduleClient(config)
+        self._run_lock = threading.Lock()
 
     def run_once(self, dry_run: bool = False) -> tuple[SourceResult, dict[str, object]]:
+        with self._run_lock:
+            return self._run_once(dry_run)
+
+    def _run_once(self, dry_run: bool = False) -> tuple[SourceResult, dict[str, object]]:
         attempted_at = _utc_now()
         self.status.update(state="syncing", message="Reading FUSSBALL.DE", last_attempt=attempted_at)
         try:
             result = self.source.fetch()
-            payload = build_discord_payload(result, self.config)
-            published = False
+            state_store = StateStore(self.config.state_path)
+            known_events = state_store.load_events()
+            notifications_sent = 0
             if not dry_run and self.config.can_publish:
                 client = DiscordWebhookClient(
                     self.config.webhook_url,
                     StateStore(self.config.state_path),
                 )
-                client.publish(payload)
-                published = True
+                for match in result.matches:
+                    key = match.identity
+                    fingerprint = event_fingerprint(match)
+                    if known_events.get(key) == fingerprint:
+                        continue
+                    client.publish_new(build_event_payload(
+                        match,
+                        self.config,
+                        changed=key in known_events,
+                        cancelled=match.cancelled,
+                    ))
+                    known_events[key] = fingerprint
+                    notifications_sent += 1
+                state_store.save_events(known_events)
+            published = notifications_sent > 0
 
             success_at = _utc_now()
             if published:
@@ -140,7 +159,7 @@ class SyncEngine:
                 len(result.matches),
                 " and Discord was updated" if published else "",
             )
-            return result, payload
+            return result, {"notificationsSent": notifications_sent}
         except Exception as exc:
             safe_message = str(exc) or exc.__class__.__name__
             self.status.update(state="error", message="The last refresh failed", last_error=safe_message)
@@ -245,11 +264,11 @@ class PitchBotService:
                 metrics = snapshot["metrics"]
                 return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<title>SV 07 Eich Pitch Bot</title>
+<title>SV Aich Discord Bot</title>
 <style>body{{font-family:system-ui;max-width:760px;margin:3rem auto;padding:0 1rem;color:#17202a}}
 .card{{border:1px solid #d5d8dc;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px #0001}}
 dt{{font-weight:700;margin-top:1rem}}dd{{margin:.25rem 0}}button{{margin-top:1rem;padding:.7rem 1rem}}</style></head>
-<body><h1>SV 07 Eich Pitch Bot</h1><div class="card">
+<body><h1>SV Aich Discord Bot</h1><div class="card">
 <p><strong>{html.escape(str(summary['state']))}</strong> — {html.escape(str(summary['message']))}</p>
 <dl><dt>Target venue</dt><dd>{html.escape(service.config.venue_display_name)}</dd>
 <dt>Pitch occupancies</dt><dd>{metrics['matchingFixtures']['value']}</dd>
