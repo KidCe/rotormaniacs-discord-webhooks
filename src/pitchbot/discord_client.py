@@ -72,6 +72,22 @@ class StateStore:
                 }
         return result
 
+    def load_availability_messages(self) -> dict[str, dict[str, str]]:
+        if not self.path.exists():
+            return {}
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise DiscordError("The local Discord message state is unreadable.") from exc
+        result: dict[str, dict[str, str]] = {}
+        for key, message in value.get("availabilityMessages", {}).items():
+            if isinstance(message, dict):
+                result[str(key)] = {
+                    "weekendKey": str(message.get("weekendKey", "")),
+                    "messageId": str(message.get("messageId", "")),
+                }
+        return result
+
     def save(self, message_id: str, payload: dict[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -115,6 +131,19 @@ class StateStore:
                 current = {}
         current["reminderMessages"] = reminders
         current["reminders"] = {key: value["fingerprint"] for key, value in reminders.items()}
+        temporary = self.path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(current, indent=2), encoding="utf-8")
+        os.replace(temporary, self.path)
+
+    def save_availability_messages(self, messages: dict[str, dict[str, str]]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        current = {}
+        if self.path.exists():
+            try:
+                current = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                current = {}
+        current["availabilityMessages"] = messages
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(json.dumps(current, indent=2), encoding="utf-8")
         os.replace(temporary, self.path)

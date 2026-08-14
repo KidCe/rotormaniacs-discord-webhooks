@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from pitchbot.config import Config  # noqa: E402
 from pitchbot.models import Match, SourceResult  # noqa: E402
 from pitchbot.render import (  # noqa: E402
+    availability_weekend_start,
+    build_availability_payload,
     build_discord_payload,
     build_event_payload,
     build_weekend_reminder_payload,
@@ -58,6 +60,15 @@ class DiscordRenderTests(unittest.TestCase):
         self.assertTrue(weekend_reminder_due(sunday_match, date(2026, 8, 26)))
         self.assertTrue(weekend_reminder_due(sunday_match, date(2026, 8, 30)))
         self.assertIn("THIS WEEKEND", build_weekend_reminder_payload(sunday_match, self.config)["embeds"][0]["title"])
+
+    def test_availability_polls_use_the_current_upcoming_weekend(self) -> None:
+        self.assertEqual(availability_weekend_start(date(2026, 8, 10)), date(2026, 8, 15))
+        self.assertEqual(availability_weekend_start(date(2026, 8, 16)), date(2026, 8, 15))
+        payload = build_availability_payload(date(2026, 8, 14), self.config)
+        embed = payload["embeds"][0]
+        self.assertIn("FRIDAY AVAILABILITY", embed["title"])
+        self.assertIn("✅", embed["description"])
+        self.assertIn("❌", embed["description"])
 
 
 if __name__ == "__main__":

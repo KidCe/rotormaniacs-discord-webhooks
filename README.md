@@ -2,6 +2,8 @@
 
 This small service maintains one chronological Discord dashboard for SV Aich home fixtures. It reads the SV Aich club schedule from FUSSBALL.DE, checks each actual venue, and silently edits the same dashboard message only when its contents change. Separate messages are reserved for meaningful fixture changes, explicit cancellations, and weekend reminders.
 
+Starting each Monday, the SV Aich channel also contains three availability polls for the upcoming Friday, Saturday, and Sunday. Those three messages are retained for that weekend and replaced on the following Monday. Each poll asks members to react with ✅ or ❌; reactions are intentionally left for manual admin review because the integration uses a webhook rather than a Discord bot.
+
 The default configuration is ready for:
 
 - Club: SV Aich / SV 07 Aich

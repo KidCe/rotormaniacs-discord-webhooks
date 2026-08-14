@@ -64,6 +64,13 @@ class DiscordWebhookClientTests(unittest.TestCase):
             store.save_reminder_messages(reminders)
             self.assertEqual(store.load_reminder_messages(), reminders)
 
+    def test_availability_message_state_round_trips(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = StateStore(Path(directory) / "state.json")
+            messages = {"friday": {"weekendKey": "2026-08-15", "messageId": "789"}}
+            store.save_availability_messages(messages)
+            self.assertEqual(store.load_availability_messages(), messages)
+
 
 if __name__ == "__main__":
     unittest.main()

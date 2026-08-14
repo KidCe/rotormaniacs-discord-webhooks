@@ -26,6 +26,32 @@ def weekend_reminder_due(match: Match, today: date) -> bool:
     return reminder_date is not None and reminder_date <= today <= match.match_date
 
 
+def availability_weekend_start(today: date) -> date:
+    """Return the Saturday belonging to the currently advertised weekend."""
+    if today.weekday() == 6:
+        return today - timedelta(days=1)
+    return today + timedelta(days=(5 - today.weekday()) % 7)
+
+
+def build_availability_payload(day: date, config: Config) -> dict[str, object]:
+    day_name = day.strftime("%A")
+    pretty_day = day.strftime("%A, %d %B %Y")
+    embed = {
+        "title": f"📅 {day_name.upper()} AVAILABILITY",
+        "description": (
+            f"Who is available for flying at Sportplatz Aich on **{pretty_day}**?\n\n"
+            "React with ✅ if you are available or ❌ if you are not available."
+        ),
+        "color": 0x3498DB,
+        "footer": {"text": "Manual availability poll • SV Aich home-game planning"},
+    }
+    return {
+        "username": "SV Aich Spielplan",
+        "allowed_mentions": {"parse": []},
+        "embeds": [embed],
+    }
+
+
 def _escape(value: str) -> str:
     return re.sub(r"([\\`*_{}\[\]()<>#+\-.!|])", r"\\\1", value)
 

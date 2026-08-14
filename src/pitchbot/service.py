@@ -5,7 +5,7 @@ import json
 import logging
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -14,6 +14,8 @@ from .discord_client import DiscordWebhookClient, StateStore
 from .fussball import FussballScheduleClient
 from .models import SourceResult
 from .render import (
+    availability_weekend_start,
+    build_availability_payload,
     build_discord_payload,
     build_event_payload,
     build_weekend_reminder_payload,
@@ -156,6 +158,25 @@ class SyncEngine:
                         client.delete(reminder.get("messageId", ""))
                         reminder_messages.pop(key, None)
                         notifications_sent += 1
+                availability_messages = state_store.load_availability_messages()
+                weekend_start = availability_weekend_start(local_today)
+                weekend_key = weekend_start.isoformat()
+                if any(
+                    record.get("weekendKey") != weekend_key
+                    for record in availability_messages.values()
+                ) or set(availability_messages) != {"friday", "saturday", "sunday"}:
+                    for record in availability_messages.values():
+                        client.delete(record.get("messageId", ""))
+                    availability_messages = {}
+                    for slot, offset in (("friday", -1), ("saturday", 0), ("sunday", 1)):
+                        day = weekend_start + timedelta(days=offset)
+                        message_id = client.publish_new(build_availability_payload(day, self.config))
+                        availability_messages[slot] = {
+                            "weekendKey": weekend_key,
+                            "messageId": message_id,
+                        }
+                    state_store.save_availability_messages(availability_messages)
+                    notifications_sent += 3
                 if current_reminder and current_key not in reminder_messages:
                     message_id = client.publish_new(build_weekend_reminder_payload(current_reminder, self.config))
                     reminder_messages[current_key] = {
