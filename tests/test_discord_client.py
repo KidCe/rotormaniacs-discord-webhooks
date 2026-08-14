@@ -14,7 +14,7 @@ from pitchbot.discord_client import DiscordWebhookClient, StateStore  # noqa: E4
 
 class RecordingClient(DiscordWebhookClient):
     def __init__(self, state_store: StateStore) -> None:
-        super().__init__("https://discord.com/api/webhooks/123/token", state_store)
+        super().__init__("https://discord.example/api/webhooks/test-id/test-token", state_store)
         self.requests: list[tuple[str, str, dict[str, object]]] = []
 
     def _request(self, method: str, url: str, payload: dict[str, object] | None) -> dict[str, object]:
@@ -55,7 +55,7 @@ class DiscordWebhookClientTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             client = RecordingClient(StateStore(Path(directory) / "state.json"))
             client.delete("789")
-            self.assertEqual(client.requests, [("DELETE", "https://discord.com/api/webhooks/123/token/messages/789", None)])
+            self.assertEqual(client.requests, [("DELETE", "https://discord.example/api/webhooks/test-id/test-token/messages/789", None)])
 
     def test_reminder_message_state_round_trips(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

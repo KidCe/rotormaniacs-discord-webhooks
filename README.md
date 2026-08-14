@@ -1,6 +1,11 @@
-# SV Aich Discord Bot
+# Road2Maniacs Discord Webhooks
 
-This small service maintains one chronological Discord dashboard for SV Aich home fixtures. It reads the SV Aich club schedule from FUSSBALL.DE, checks each actual venue, and silently edits the same dashboard message only when its contents change. Separate messages are reserved for meaningful fixture changes, explicit cancellations, and weekend reminders.
+This repository contains low-frequency Discord webhook integrations for the Road2Maniacs community, including the SV Aich home-fixture schedule and the TSV Korntal FPV calendar.
+
+- [Join or open the Rotor Maniacs / TSV Korntal Discord server](https://discord.com/channels/1308875879786610718/1537600741445738557) — SV Aich channel
+- [View the automated GitHub Actions](https://github.com/KidCe/road2maniacs-discord-webhooks/actions)
+
+The SV Aich integration maintains one chronological Discord dashboard for home fixtures. It reads the SV Aich club schedule from FUSSBALL.DE, checks each actual venue, and silently edits the same dashboard message only when its contents change. Separate messages are reserved for meaningful fixture changes, explicit cancellations, and weekend reminders.
 
 Starting each Monday, the SV Aich channel also contains three availability polls for the upcoming Friday, Saturday, and Sunday. Those three messages are retained for that weekend and replaced on the following Monday. Each poll asks members to react with ✅ or ❌; reactions are intentionally left for manual admin review because the integration uses a webhook rather than a Discord bot.
 
@@ -14,7 +19,9 @@ The default configuration is ready for:
 
 ## Automatic GitHub Actions hosting
 
-The repository includes a GitHub Actions workflow that runs twice daily, around 07:00 and 19:00 German local time, including daylight-saving changes. It can also be started manually from the repository's **Actions** page. This is the recommended deployment: it works while personal computers are turned off and requires no Discord bot token or public server.
+The repository includes GitHub Actions workflows that run twice daily, around 07:00 and 19:00 German local time, including daylight-saving changes. They can also be started manually from the repository's **Actions** page. This deployment works while personal computers are turned off and requires no Discord bot token or public server.
+
+The repository is public by design. Webhook URLs, tokens, and other credentials are never stored in the repository; they remain in GitHub Actions Secrets. The checked-in `.env.example` contains names only, with empty values.
 
 Store the Discord webhook as the repository secret `DISCORD_WEBHOOK_URL`. The non-secret notification history in `data/state.json` is committed by the workflow only when it changes. This prevents duplicate messages across short-lived GitHub runners.
 
@@ -45,7 +52,7 @@ To start it automatically after Windows sign-in, double-click `install-startup.c
 - `http://127.0.0.1:8781` — local status page while the service is running.
 - `POST http://127.0.0.1:8781/refresh` — request an immediate background refresh.
 
-The dashboard message ID, known fixture fingerprints, and reminder history are stored in `data/state.json`. Keep this file when moving the service so the existing dashboard can be edited and notifications are not repeated.
+The dashboard message ID, known fixture fingerprints, reminder history, and weekend poll message IDs are stored in `data/state.json`. Keep this file when moving the service so existing messages can be edited or removed and notifications are not repeated.
 
 ## Move to another Windows computer
 

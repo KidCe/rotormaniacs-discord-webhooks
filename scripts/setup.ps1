@@ -6,7 +6,7 @@ $Requirements = Join-Path $ProjectRoot "requirements.txt"
 $EnvFile = Join-Path $ProjectRoot ".env"
 $EnvExample = Join-Path $ProjectRoot ".env.example"
 
-Write-Host "Preparing SV Aich Discord Bot..."
+Write-Host "Preparing Road2Maniacs Discord Webhooks..."
 
 if (-not (Test-Path -LiteralPath $VenvPython)) {
     $Python = Get-Command py -ErrorAction SilentlyContinue

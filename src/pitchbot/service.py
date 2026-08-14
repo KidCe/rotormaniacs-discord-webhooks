@@ -25,7 +25,7 @@ from .render import (
 
 
 LOGGER = logging.getLogger(__name__)
-LOG_TAG = "sv-aich-discord-bot"
+LOG_TAG = "road2maniacs-discord-webhooks"
 
 
 def _utc_now() -> str:
@@ -325,11 +325,11 @@ class PitchBotService:
                 metrics = snapshot["metrics"]
                 return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<title>SV Aich Discord Bot</title>
+<title>Road2Maniacs Discord Webhooks</title>
 <style>body{{font-family:system-ui;max-width:760px;margin:3rem auto;padding:0 1rem;color:#17202a}}
 .card{{border:1px solid #d5d8dc;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px #0001}}
 dt{{font-weight:700;margin-top:1rem}}dd{{margin:.25rem 0}}button{{margin-top:1rem;padding:.7rem 1rem}}</style></head>
-<body><h1>SV Aich Discord Bot</h1><div class="card">
+<body><h1>Road2Maniacs Discord Webhooks</h1><div class="card">
 <p><strong>{html.escape(str(summary['state']))}</strong> — {html.escape(str(summary['message']))}</p>
 <dl><dt>Target venue</dt><dd>{html.escape(service.config.venue_display_name)}</dd>
 <dt>Pitch occupancies</dt><dd>{metrics['matchingFixtures']['value']}</dd>

@@ -19,7 +19,7 @@ from .models import Match, SourceResult
 
 
 LOGGER = logging.getLogger(__name__)
-USER_AGENT = "SV-Aich-Discord-Bot/1.0 (private community schedule; low-frequency access)"
+USER_AGENT = "Road2Maniacs-Discord-Webhooks/1.0 (community schedule; low-frequency access)"
 CANCELLED_TERMS = (
     "absetzung",
     "abgesagt",

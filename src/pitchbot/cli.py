@@ -11,7 +11,7 @@ from .service import PitchBotService, RuntimeStatus, SyncEngine
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Publish SV Aich home fixtures to Discord.")
+    parser = argparse.ArgumentParser(description="Publish community schedules to Discord webhooks.")
     parser.add_argument("--env-file", type=Path, help="Read configuration from this .env file.")
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("serve", help="Run the scheduled service and local status endpoint.")

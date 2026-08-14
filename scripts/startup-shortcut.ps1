@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $StartupFolder = [Environment]::GetFolderPath("Startup")
-$ShortcutPath = Join-Path $StartupFolder "SV Aich Discord Bot.lnk"
+$ShortcutPath = Join-Path $StartupFolder "Road2Maniacs Discord Webhooks.lnk"
 
 if ($Install -eq $Uninstall) {
     throw "Choose either -Install or -Uninstall."
@@ -17,7 +17,7 @@ if ($Install) {
     $Shortcut = $Shell.CreateShortcut($ShortcutPath)
     $Shortcut.TargetPath = Join-Path $ProjectRoot "start.cmd"
     $Shortcut.WorkingDirectory = $ProjectRoot
-$Shortcut.Description = "Start SV Aich Discord Bot in a visible window"
+$Shortcut.Description = "Start Road2Maniacs Discord Webhooks in a visible window"
     $Shortcut.Save()
     Write-Host "Installed the startup shortcut. The bot will open visibly after Windows sign-in."
 }

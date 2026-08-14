@@ -1,4 +1,4 @@
-name: Sync SV Aich fixtures
+name: Sync SV Aich fixtures · Road2Maniacs Webhooks
 
 on:
   schedule:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: sv-aich-fixture-sync
+  group: road2maniacs-fixture-sync
   cancel-in-progress: false
 
 jobs:
