@@ -2,6 +2,10 @@
 
 GitHub Actions integrations that publish community schedules into Discord through webhooks. The repository is public; all webhook URLs remain private GitHub Actions Secrets.
 
+## AI assistance disclosure
+
+This project was created and maintained with substantial assistance from OpenAI Codex. The repository maintainer directed the work, made the project decisions, and is responsible for reviewing and using the result.
+
 ## Links
 
 - [Rotormaniacs / TSV Korntal Discord server](https://discord.com/channels/1308875879786610718/1537600741445738557)
