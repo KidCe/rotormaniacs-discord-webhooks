@@ -206,7 +206,7 @@ class DiscordWebhookClient:
             url,
             data=body,
             method=method,
-            headers={"Content-Type": "application/json", "User-Agent": "Road2Maniacs-Discord-Webhooks/1.0"},
+            headers={"Content-Type": "application/json", "User-Agent": "Rotormaniacs-Discord-Webhooks/1.0"},
         )
         try:
             with urlopen(request, timeout=self.timeout_seconds) as response:

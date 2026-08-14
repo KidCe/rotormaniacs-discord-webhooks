@@ -8,7 +8,7 @@ from .models import Match, SourceResult
 
 
 DESCRIPTION_LIMIT = 3900
-AUTOMATION_REPO_ACTIONS_URL = "https://github.com/KidCe/road2maniacs-discord-webhooks/actions"
+AUTOMATION_REPO_ACTIONS_URL = "https://github.com/KidCe/rotormaniacs-discord-webhooks/actions"
 
 
 def event_fingerprint(match: Match) -> str:
@@ -104,7 +104,7 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
         description = (
             f"{next_text}\nAll known fixtures at **{_escape(config.venue_display_name)}**, "
             "ordered from nearest to furthest away.\n\n"
-            f"Automation: [Road2Maniacs Discord Webhooks]({AUTOMATION_REPO_ACTIONS_URL})"
+            f"Automation: [Rotormaniacs Discord Webhooks]({AUTOMATION_REPO_ACTIONS_URL})"
         )
         color = 0xE74C3C
         title = "SV Aich — Home fixture dashboard"
@@ -112,7 +112,7 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
         description = (
             f"No scheduled matches at **{_escape(config.venue_display_name)}** were found "
             f"for the next {config.lookahead_days} days.\n\n"
-            f"Automation: [Road2Maniacs Discord Webhooks]({AUTOMATION_REPO_ACTIONS_URL})"
+            f"Automation: [Rotormaniacs Discord Webhooks]({AUTOMATION_REPO_ACTIONS_URL})"
         )
         color = 0x2ECC71
         title = "SV Aich — Pitch currently clear"
