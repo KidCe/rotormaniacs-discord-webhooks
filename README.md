@@ -81,6 +81,18 @@ docker compose down
 
 After changing `.env`, restart the service.
 
+## TSV Korntal FPV calendar integrations
+
+The optional `sync-korntal.yml` workflow reads the official iCal calendar from `fpvkorntal.de` and maintains three independent Discord channels:
+
+- `training-whoop` — Training Whoop events in the Aula-Halle.
+- `training-3-5-zoll` — 3–5 inch training in Sporthalle Korntal (SKO).
+- `whooprace` — Whooprace and race events.
+
+Each channel contains two persistent webhook messages. The dashboard always shows only the next six events. A separate next-event message is deleted and recreated when the next event changes, so channel subscribers receive a fresh Discord notification. Its text only asks users to react with ✅ for interest/participation or ❌ for no interest/participation. The workflow does not evaluate those reactions or declare whether a session will take place; admins can decide and post the result manually.
+
+Create one webhook per channel and save them as the GitHub Actions secrets `KORNTAL_WHOOP_WEBHOOK_URL`, `KORNTAL_3_5_WEBHOOK_URL`, and `KORNTAL_RACE_WEBHOOK_URL`. The feed source is the official [FPV Korntal calendar](https://fpvkorntal.de/kalender/?ical=1).
+
 ## How occupancy is decided
 
 A match blocks FPV training only when all of these conditions are true:
