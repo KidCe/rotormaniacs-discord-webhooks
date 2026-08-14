@@ -1,0 +1,47 @@
+name: Sync TSV Korntal FPV calendar
+
+on:
+  schedule:
+    - cron: "7 5,6,17,18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tsv-korntal-calendar-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select German 07:00 and 19:00 runs
+        id: schedule
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          local_hour="$(TZ=Europe/Berlin date +%H)"
+          if [ "$local_hour" = "07" ] || [ "$local_hour" = "19" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v7
+        if: steps.schedule.outputs.run == 'true'
+      - uses: actions/setup-python@v7
+        if: steps.schedule.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+      - name: Sync Korntal feeds
+        if: steps.schedule.outputs.run == 'true'
+        env:
+          KORNTAL_WHOOP_WEBHOOK_URL: ${{ secrets.KORNTAL_WHOOP_WEBHOOK_URL }}
+          KORNTAL_3_5_WEBHOOK_URL: ${{ secrets.KORNTAL_3_5_WEBHOOK_URL }}
+          KORNTAL_RACE_WEBHOOK_URL: ${{ secrets.KORNTAL_RACE_WEBHOOK_URL }}
+        run: python run_korntal.py sync
+      - name: Persist Korntal state
+        if: steps.schedule.outputs.run == 'true'
+        run: |
+          if git diff --quiet -- data/korntal; then echo "Korntal state is unchanged."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/korntal
+          git commit -m "Update TSV Korntal calendar state"
+          git push
