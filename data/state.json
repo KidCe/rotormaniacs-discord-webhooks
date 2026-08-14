@@ -16,5 +16,19 @@
   "messageId": "1537608512941850698",
   "lastPublishedAt": "2026-08-13T23:47:17.067642+00:00",
   "payloadSha256": "01e877c0dbb9dc87f83634f609bf60c2d2a50321d594de9e43e2b9c7b641c02c",
-  "reminderMessages": {}
+  "reminderMessages": {},
+  "availabilityMessages": {
+    "friday": {
+      "weekendKey": "2026-08-15",
+      "messageId": "1537625641409581057"
+    },
+    "saturday": {
+      "weekendKey": "2026-08-15",
+      "messageId": "1537625642693173331"
+    },
+    "sunday": {
+      "weekendKey": "2026-08-15",
+      "messageId": "1537625644643385365"
+    }
+  }
 }
