@@ -246,6 +246,6 @@ class FussballScheduleClient:
 
     def _is_target_venue(self, venue: str) -> bool:
         normalized_venue = _normalized(venue)
-        return bool(normalized_venue) and any(
+        return bool(normalized_venue) and all(
             _normalized(term) in normalized_venue for term in self.config.venue_match_terms
         )

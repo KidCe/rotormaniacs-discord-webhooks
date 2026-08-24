@@ -57,6 +57,14 @@ class ScheduleParserTests(unittest.TestCase):
         )
         self.assertEqual(matches, [])
 
+    def test_rejects_another_aichtal_venue(self) -> None:
+        matches, _ = self.client.parse(
+            fixture("30.08.2026 | 15:00", "Kunstrasenplatz | Raiffeisenstr. 33 | 72631 Aichtal"),
+            date(2026, 8, 1),
+            date(2026, 12, 31),
+        )
+        self.assertEqual(matches, [])
+
     def test_marks_cancelled_fixture_for_notification(self) -> None:
         matches, _ = self.client.parse(
             fixture("15.08.2026 | 16:00", "Sportplatz Aich | Heideweg 60 | 72631 Aichtal", "Absetzung"),
