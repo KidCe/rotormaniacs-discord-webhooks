@@ -19,7 +19,7 @@ This project was created and maintained with substantial assistance from OpenAI 
 
 The workflow reads the SV Aich schedule from FUSSBALL.DE and keeps the `#sv-aich-heimspiele` channel up to date.
 
-- One chronological dashboard is edited in place.
+- One chronological dashboard is edited in place and shows only the next five fixtures.
 - Only home fixtures at Sportplatz Aich are included.
 - Changed or cancelled fixtures create a separate notification.
 - A weekend reminder is posted when a coming weekend is affected.

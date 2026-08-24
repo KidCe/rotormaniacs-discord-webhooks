@@ -123,7 +123,7 @@ class Config:
             sync_interval_minutes=_int(
                 value("SYNC_INTERVAL_MINUTES", "360"), "SYNC_INTERVAL_MINUTES", 15, 10080
             ),
-            max_events=_int(value("MAX_EVENTS", "25"), "MAX_EVENTS", 1, 25),
+            max_events=_int(value("MAX_EVENTS", "5"), "MAX_EVENTS", 1, 25),
             timezone_name=timezone_name,
             status_host=value("STATUS_HOST", "127.0.0.1"),
             status_port=_int(value("STATUS_PORT", "8781"), "STATUS_PORT", 1024, 65535),

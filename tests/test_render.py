@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 
@@ -36,10 +36,38 @@ class DiscordRenderTests(unittest.TestCase):
         payload = build_discord_payload(result, self.config)
         embed = payload["embeds"][0]
         self.assertIn("dashboard", embed["title"])
-        self.assertIn("Eich vs Guests", embed["fields"][0]["value"])
+        self.assertIn("**Eich**", embed["fields"][0]["value"])
+        self.assertIn("**Guests**", embed["fields"][0]["value"])
         self.assertIn("NEXT", embed["fields"][0]["name"])
         self.assertEqual(payload["allowed_mentions"], {"parse": []})
         self.assertNotIn("discord", payload["username"].casefold())
+
+    def test_dashboard_shows_only_five_fixtures_with_structured_details(self) -> None:
+        matches = tuple(
+            Match(
+                date(2026, 8, 15) + timedelta(days=index * 7),
+                time(15),
+                "SV Aich",
+                f"Guests {index + 1}",
+                "League",
+                "ME",
+                str(index),
+                "Sportplatz Aich",
+                "https://example.test",
+            )
+            for index in range(6)
+        )
+        payload = build_discord_payload(
+            SourceResult(matches, 6, datetime.now(timezone.utc), "https://www.fussball.de/example"),
+            self.config,
+        )
+        fields = payload["embeds"][0]["fields"]
+        self.assertEqual(len(fields), 5)
+        self.assertTrue(fields[0]["name"].startswith("01 · NEXT"))
+        self.assertIn("🕒", fields[0]["value"])
+        self.assertIn("🏆", fields[0]["value"])
+        self.assertIn("📍", fields[0]["value"])
+        self.assertIn("1 more matching fixture not shown", payload["embeds"][0]["footer"]["text"])
 
     def test_renders_clear_state(self) -> None:
         result = SourceResult((), 4, datetime.now(timezone.utc), "https://www.fussball.de/example")

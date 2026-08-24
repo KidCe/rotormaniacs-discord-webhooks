@@ -82,14 +82,16 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
             when = f"<t:{timestamp}:D> · <t:{timestamp}:t>"
         else:
             when = f"{match.match_date.strftime('%d.%m.%Y')} · time not confirmed"
-        label = f"NEXT · {when}" if index == 0 else when
+        label = f"{index + 1:02d} · {'NEXT · ' if index == 0 else ''}{when}"
         status = "\n**CANCELLED**" if match.cancelled else ""
         source = f"[Open on FUSSBALL.DE]({match.url})" if match.url else "FUSSBALL.DE"
         fields.append({
             "name": label,
             "value": (
-                f"**{_escape(match.home_team)} vs {_escape(match.away_team)}**{status}\n"
-                f"{_escape(match.venue or config.venue_display_name)} · {source}"
+                f"**{_escape(match.home_team)}**  vs  **{_escape(match.away_team)}**{status}\n"
+                f"🕒 {when}\n"
+                f"🏆 {_escape(match.competition or 'Competition not specified')}\n"
+                f"📍 {_escape(match.venue or config.venue_display_name)} · {source}"
             ),
             "inline": False,
         })
@@ -123,7 +125,8 @@ def build_discord_payload(result: SourceResult, config: Config) -> dict[str, obj
         f"{config.lookahead_days}-day window"
     )
     if omitted > 0:
-        footer += f" · {omitted} more matching fixtures not shown"
+        fixture_word = "fixture" if omitted == 1 else "fixtures"
+        footer += f" · {omitted} more matching {fixture_word} not shown"
 
     return {
         "username": "SV Aich Spielplan",
