@@ -1,6 +1,6 @@
 {
   "events": {
-    "350245003": "2026-08-30|15:00:00|SV 07 Aich|SGM Altdorf II / Gro\u00dfbettlingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
+    "350245003": "2026-08-30|15:00:00|SV 07 Aich|SGM Altdorf II / Gro\u00dfbettlingen II|Kunstrasenplatz | Raiffeisenstr. 33 | 72631 Aichtal|",
     "350245017": "2026-09-13|15:00:00|SV 07 Aich|N\u00fcrtinger Kickers|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245031": "2026-09-27|15:00:00|SV 07 Aich|SV Nabern II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245045": "2026-10-11|15:00:00|SV 07 Aich|TSV Neckartenzlingen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
@@ -14,8 +14,8 @@
   },
   "reminders": {},
   "messageId": "1537608512941850698",
-  "lastPublishedAt": "2026-08-17T05:46:02.466511+00:00",
-  "payloadSha256": "e1c9ad786353a8521e7e6aac6a834f7625eff61292c68747df58f743ce909993",
+  "lastPublishedAt": "2026-08-24T17:40:19.571789+00:00",
+  "payloadSha256": "a78e80205160499917338529d7d79d6a7453dc8f111e8db24d65e472d7c5a6b0",
   "reminderMessages": {},
   "availabilityMessages": {
     "friday": {
