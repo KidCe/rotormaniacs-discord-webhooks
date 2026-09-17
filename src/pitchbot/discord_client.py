@@ -191,6 +191,14 @@ class DiscordWebhookClient:
             raise DiscordError("Discord accepted the webhook but returned no message ID.")
         return message_id
 
+    def edit_message(self, message_id: str, payload: dict[str, object]) -> None:
+        if not message_id:
+            return
+        edit_payload = {
+            key: value for key, value in payload.items() if key not in {"username", "avatar_url"}
+        }
+        self._request("PATCH", f"{self.webhook_url}/messages/{message_id}?wait=true", edit_payload)
+
     def delete(self, message_id: str) -> None:
         if not message_id:
             return

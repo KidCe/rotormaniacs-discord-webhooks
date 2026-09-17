@@ -23,7 +23,7 @@ The workflow reads the SV Aich schedule from FUSSBALL.DE and keeps the `#sv-aich
 - Only home fixtures at Sportplatz Aich are included.
 - Changed or cancelled fixtures create a separate notification.
 - A weekend reminder is posted when a coming weekend is affected.
-- Three availability polls cover the upcoming Friday, Saturday, and Sunday. They are replaced on the following Monday and ask members to react with ✅ or ❌.
+- Three availability polls cover the upcoming Friday, Saturday, and Sunday. They are replaced on the following Monday, updated when a home game affects one of those days, and ask members to react with ✅ or ❌.
 - Unchanged runs do not send duplicate notifications.
 
 Workflow: `.github/workflows/sync-fixtures.yml`
@@ -50,7 +50,7 @@ Required secrets:
 
 ## Scheduling and state
 
-Both workflows run twice daily around 07:00 and 19:00 Europe/Berlin and can also be started manually from GitHub Actions. They run on GitHub-hosted runners, so the local Windows PC does not need to be online.
+Both workflows run twice daily around 07:00 and 19:00 Europe/Berlin and can also be started manually from GitHub Actions. The SV Aich workflow is deliberately idempotent and no longer skips runs when GitHub starts a scheduled job late. They run on GitHub-hosted runners, so the local Windows PC does not need to be online.
 
 The workflows commit only non-secret synchronization state back to `data/state.json` and the Korntal state files. This preserves Discord message IDs and event fingerprints across short-lived runners and prevents duplicate posts.
 

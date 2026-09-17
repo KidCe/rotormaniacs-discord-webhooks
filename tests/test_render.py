@@ -98,6 +98,14 @@ class DiscordRenderTests(unittest.TestCase):
         self.assertIn("✅", embed["description"])
         self.assertIn("❌", embed["description"])
 
+    def test_availability_poll_warns_when_home_game_is_scheduled(self) -> None:
+        payload = build_availability_payload(date(2026, 8, 15), self.config, pitch_occupied=True)
+        embed = payload["embeds"][0]
+        self.assertIn("HOME GAME LIKELY", embed["title"])
+        self.assertIn("PITCH PROBABLY OCCUPIED", embed["description"])
+        self.assertIn("not available for training", embed["description"])
+        self.assertIn("✅", embed["description"])
+
 
 if __name__ == "__main__":
     unittest.main()

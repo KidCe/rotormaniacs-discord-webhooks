@@ -2,8 +2,9 @@ name: Sync SV Aich fixtures · Rotormaniacs Webhooks
 
 on:
   schedule:
-    # Cover German summer and winter time; the first step keeps only 07:07/19:07 local time.
-    - cron: "7 5,6,17,18 * * *"
+    # GitHub cron uses UTC. The two daily runs are around 07:00/19:00 in German summer time.
+    # The sync is idempotent, so GitHub scheduling delays cannot suppress a run.
+    - cron: "7 5,17 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,20 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Select German 07:00 and 19:00 runs
+      - name: Enable scheduled sync
         id: schedule
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            local_hour="$(TZ=Europe/Berlin date +%H)"
-            if [ "$local_hour" = "07" ] || [ "$local_hour" = "19" ]; then
-              echo "run=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "run=false" >> "$GITHUB_OUTPUT"
-            fi
-          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
 
       - name: Check out repository
         if: steps.schedule.outputs.run == 'true'

@@ -34,16 +34,32 @@ def availability_weekend_start(today: date) -> date:
     return today + timedelta(days=(5 - today.weekday()) % 7)
 
 
-def build_availability_payload(day: date, config: Config) -> dict[str, object]:
+def build_availability_payload(
+    day: date,
+    config: Config,
+    *,
+    pitch_occupied: bool = False,
+) -> dict[str, object]:
     day_name = day.strftime("%A")
     pretty_day = day.strftime("%A, %d %B %Y")
+    occupancy_notice = ""
+    if pitch_occupied:
+        occupancy_notice = (
+            "⚠️ **HOME GAME LIKELY — PITCH PROBABLY OCCUPIED.**\n"
+            "This day is probably not available for training.\n\n"
+        )
     embed = {
-        "title": f"📅 {day_name.upper()} AVAILABILITY",
+        "title": (
+            f"⚠️ {day_name.upper()} — HOME GAME LIKELY"
+            if pitch_occupied
+            else f"📅 {day_name.upper()} AVAILABILITY"
+        ),
         "description": (
-            f"Who is available for flying at Sportplatz Aich on **{pretty_day}**?\n\n"
+            occupancy_notice
+            + f"Who is available for flying at Sportplatz Aich on **{pretty_day}**?\n\n"
             "React with ✅ if you are available or ❌ if you are not available."
         ),
-        "color": 0x3498DB,
+        "color": 0xE67E22 if pitch_occupied else 0x3498DB,
         "footer": {"text": "Manual availability poll • SV Aich home-game planning"},
     }
     return {

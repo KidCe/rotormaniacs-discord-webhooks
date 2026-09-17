@@ -57,6 +57,15 @@ class DiscordWebhookClientTests(unittest.TestCase):
             client.delete("789")
             self.assertEqual(client.requests, [("DELETE", "https://discord.example/api/webhooks/test-id/test-token/messages/789", None)])
 
+    def test_edit_message_uses_only_supported_message_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            client = RecordingClient(StateStore(Path(directory) / "state.json"))
+            client.edit_message("789", {"username": "Pitch Bot", "avatar_url": "https://example.test/a.png", "embeds": []})
+            self.assertEqual(client.requests[0][0], "PATCH")
+            self.assertEqual(client.requests[0][1], "https://discord.example/api/webhooks/test-id/test-token/messages/789?wait=true")
+            self.assertNotIn("username", client.requests[0][2])
+            self.assertNotIn("avatar_url", client.requests[0][2])
+
     def test_reminder_message_state_round_trips(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             store = StateStore(Path(directory) / "state.json")

@@ -177,6 +177,17 @@ class SyncEngine:
                         }
                     state_store.save_availability_messages(availability_messages)
                     notifications_sent += 3
+                else:
+                    for slot, offset in (("friday", -1), ("saturday", 0), ("sunday", 1)):
+                        day = weekend_start + timedelta(days=offset)
+                        pitch_occupied = any(
+                            not match.cancelled and match.match_date == day
+                            for match in result.matches
+                        )
+                        client.edit_message(
+                            availability_messages[slot].get("messageId", ""),
+                            build_availability_payload(day, self.config, pitch_occupied=pitch_occupied),
+                        )
                 if current_reminder and current_key not in reminder_messages:
                     message_id = client.publish_new(build_weekend_reminder_payload(current_reminder, self.config))
                     reminder_messages[current_key] = {
