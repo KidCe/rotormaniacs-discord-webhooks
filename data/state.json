@@ -1,6 +1,5 @@
 {
   "events": {
-    "350245017": "2026-09-13|15:00:00|SV 07 Aich|N\u00fcrtinger Kickers|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245031": "2026-09-27|15:00:00|SV 07 Aich|SV Nabern II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245045": "2026-10-11|15:00:00|SV 07 Aich|TSV Neckartenzlingen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245101": "2027-03-14|15:00:00|SV 07 Aich|TSV Neckartailfingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
@@ -13,21 +12,21 @@
   },
   "reminders": {},
   "messageId": "1537608512941850698",
-  "lastPublishedAt": "2026-08-24T18:38:55.698283+00:00",
-  "payloadSha256": "1b47e0d7afc768cd1315242bc03ea329fd7b6ca1c63b7193c67be4711e8c688a",
+  "lastPublishedAt": "2026-09-17T08:08:49.570383+00:00",
+  "payloadSha256": "942aa57c8e46c72f69f4e6385a8de79683bdeb53eec3b86d1d471c224e1b1379",
   "reminderMessages": {},
   "availabilityMessages": {
     "friday": {
-      "weekendKey": "2026-08-29",
-      "messageId": "1541323540739919917"
+      "weekendKey": "2026-09-19",
+      "messageId": "1550055920241877003"
     },
     "saturday": {
-      "weekendKey": "2026-08-29",
-      "messageId": "1541323552202952765"
+      "weekendKey": "2026-09-19",
+      "messageId": "1550055925098750065"
     },
     "sunday": {
-      "weekendKey": "2026-08-29",
-      "messageId": "1541323553360580709"
+      "weekendKey": "2026-09-19",
+      "messageId": "1550055926495453195"
     }
   }
 }
