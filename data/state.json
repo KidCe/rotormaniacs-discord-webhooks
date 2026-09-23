@@ -10,11 +10,18 @@
     "350245168": "2027-05-23|15:00:00|SV 07 Aich|SPV 05 N\u00fcrtingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245180": "2027-06-05|15:30:00|SV 07 Aich|SGM Raidwangen II/Oberensingen III|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|"
   },
-  "reminders": {},
+  "reminders": {
+    "350245031": "2026-09-27|15:00:00|SV 07 Aich|SV Nabern II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|"
+  },
   "messageId": "1537608512941850698",
   "lastPublishedAt": "2026-09-21T10:37:48.804690+00:00",
   "payloadSha256": "6875c45820fc45cc7388eb316c3e530c7e69be7236e270446c3adbe2c9df0fcd",
-  "reminderMessages": {},
+  "reminderMessages": {
+    "350245031": {
+      "fingerprint": "2026-09-27|15:00:00|SV 07 Aich|SV Nabern II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
+      "messageId": "1552256753306050574"
+    }
+  },
   "availabilityMessages": {
     "friday": {
       "weekendKey": "2026-09-26",
