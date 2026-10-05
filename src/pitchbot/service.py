@@ -161,6 +161,16 @@ class SyncEngine:
                 availability_messages = state_store.load_availability_messages()
                 weekend_start = availability_weekend_start(local_today)
                 weekend_key = weekend_start.isoformat()
+                availability_payloads = {}
+                for slot, offset in (("friday", -1), ("saturday", 0), ("sunday", 1)):
+                    day = weekend_start + timedelta(days=offset)
+                    pitch_occupied = any(
+                        not match.cancelled and match.match_date == day
+                        for match in result.matches
+                    )
+                    availability_payloads[slot] = build_availability_payload(
+                        day, self.config, pitch_occupied=pitch_occupied,
+                    )
                 if any(
                     record.get("weekendKey") != weekend_key
                     for record in availability_messages.values()
@@ -168,9 +178,8 @@ class SyncEngine:
                     for record in availability_messages.values():
                         client.delete(record.get("messageId", ""))
                     availability_messages = {}
-                    for slot, offset in (("friday", -1), ("saturday", 0), ("sunday", 1)):
-                        day = weekend_start + timedelta(days=offset)
-                        message_id = client.publish_new(build_availability_payload(day, self.config))
+                    for slot, payload in availability_payloads.items():
+                        message_id = client.publish_new(payload)
                         availability_messages[slot] = {
                             "weekendKey": weekend_key,
                             "messageId": message_id,
@@ -178,15 +187,10 @@ class SyncEngine:
                     state_store.save_availability_messages(availability_messages)
                     notifications_sent += 3
                 else:
-                    for slot, offset in (("friday", -1), ("saturday", 0), ("sunday", 1)):
-                        day = weekend_start + timedelta(days=offset)
-                        pitch_occupied = any(
-                            not match.cancelled and match.match_date == day
-                            for match in result.matches
-                        )
+                    for slot, payload in availability_payloads.items():
                         client.edit_message(
                             availability_messages[slot].get("messageId", ""),
-                            build_availability_payload(day, self.config, pitch_occupied=pitch_occupied),
+                            payload,
                         )
                 if current_reminder and current_key not in reminder_messages:
                     message_id = client.publish_new(build_weekend_reminder_payload(current_reminder, self.config))
