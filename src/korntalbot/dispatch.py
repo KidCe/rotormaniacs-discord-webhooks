@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable
 from zoneinfo import ZoneInfo
@@ -9,7 +10,7 @@ from zoneinfo import ZoneInfo
 from .discord_client import Webhook
 from .ical import fetch_events
 from .models import CalendarEvent
-from .render import dashboard_payload, next_event_payload
+from .render import availability_payload, dashboard_payload, event_notification_payload, next_event_payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,7 +29,13 @@ def _matches(feed_key: str, event: CalendarEvent) -> bool:
     if feed_key == "training-whoop":
         return "whoop" in summary and "race" not in summary and "whooprace" not in summary
     if feed_key == "training-3-5-zoll":
-        return "3-5" in summary or "3.5" in summary or "5 zoll" in summary
+        if any(word in summary for word in ("whoop", "race", "rennen")) or any(word in categories for word in ("race", "rennen")):
+            return False
+        size = re.search(r'\b3\s*[-–—−.]\s*5\b|\b[35]\s*(?:zoll|inch|["″])', summary)
+        sko = "sko" in event.location.casefold() or "sporthalle korntal" in event.location.casefold()
+        category_size = "3 zoll" in categories or "5 zoll" in categories
+        training = "training" in summary or "fliegen" in summary or event.cancelled
+        return sko and training and (bool(size) or category_size)
     if feed_key == "whooprace":
         return "race" in summary or "rennen" in summary or "race" in categories or "rennen" in categories
     return False
@@ -41,12 +48,16 @@ FEEDS = (
 )
 
 
-def sync_feed(feed: Feed, webhook_url: str, state_dir: Path, now: datetime | None = None) -> dict[str, object]:
-    events = [event for event in fetch_events() if feed.matcher(event)]
-    today = (now or datetime.now(ZoneInfo("Europe/Berlin"))).date()
-    upcoming = [event for event in events if event.event_date >= today]
+def sync_feed(feed: Feed, webhook_url: str, state_dir: Path, now: datetime | None = None,
+              *, source_events: list[CalendarEvent] | None = None) -> dict[str, object]:
+    events = sorted([event for event in (fetch_events() if source_events is None else source_events) if feed.matcher(event)],
+                    key=lambda event: (event.start, event.identity))
+    local_now = (now or datetime.now(ZoneInfo("Europe/Berlin"))).astimezone(ZoneInfo("Europe/Berlin"))
+    upcoming = [event for event in events if (event.end or event.start) > local_now]
     webhook = Webhook(webhook_url, state_dir / feed.state_file)
     dashboard_changed = webhook.sync_message("dashboard", dashboard_payload(upcoming, feed.label, feed.channel_description))
+    if feed.key == "training-3-5-zoll":
+        return _sync_sko(feed, webhook, upcoming, events, local_now, dashboard_changed)
     state = webhook._state()
     next_record = state.get("next", {})
     next_event = upcoming[0] if upcoming else None
@@ -65,3 +76,44 @@ def sync_feed(feed: Feed, webhook_url: str, state_dir: Path, now: datetime | Non
         state["next"]["eventKey"] = next_key
         webhook._save(state)
     return {"feed": feed.key, "events": len(upcoming[:6]), "dashboardUpdated": dashboard_changed, "nextMessageReplaced": next_changed}
+
+
+def _sync_sko(feed: Feed, webhook: Webhook, upcoming: list[CalendarEvent], events: list[CalendarEvent],
+              now: datetime, dashboard_changed: bool) -> dict[str, object]:
+    state = webhook._state()
+    known = state.setdefault("events", {})
+    # On first import, group dates to avoid one message for every winter appointment.
+    notifications: dict[str, list[CalendarEvent]] = {"new": [], "updated": [], "cancelled": []}
+    for event in events:
+        previous = known.get(event.identity)
+        if previous is None and event not in upcoming:
+            continue
+        if previous is None or previous["fingerprint"] != event.fingerprint:
+            kind = "cancelled" if event.cancelled else "updated" if previous else "new"
+            notifications[kind].append(event)
+    announced = 0
+    for kind, pending in notifications.items():
+        for offset in range(0, len(pending), 6):
+            batch = pending[offset:offset + 6]
+            message_id = webhook.publish_new(event_notification_payload(batch, feed.label, kind))
+            for event in batch:
+                known[event.identity] = {"fingerprint": event.fingerprint, "messageId": message_id}
+            webhook._save(state)
+            announced += len(batch)
+
+    availability_updated = 0
+    monday = now.date() - timedelta(days=now.weekday())
+    for event in events:
+        slot = f"availability:{event.identity}"
+        record = webhook._state().get(slot)
+        changed = isinstance(record, dict) and record.get("eventFingerprint") != event.fingerprint
+        in_week = monday <= event.event_date < monday + timedelta(days=7)
+        due = event in upcoming and in_week and not event.cancelled
+        if due or changed:
+            # PATCH keeps the same message and its members' reactions on schedule changes.
+            availability_updated += webhook.sync_message(slot, availability_payload(event, feed.label, rescheduled=not in_week))
+            poll_state = webhook._state()
+            poll_state[slot]["eventFingerprint"] = event.fingerprint
+            webhook._save(poll_state)
+    return {"feed": feed.key, "events": len(upcoming), "dashboardUpdated": dashboard_changed,
+            "eventsAnnounced": announced, "availabilityUpdated": availability_updated}

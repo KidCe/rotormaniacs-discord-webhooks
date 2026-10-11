@@ -2,7 +2,9 @@ name: Sync TSV Korntal FPV calendar
 
 on:
   schedule:
-    - cron: "7 5,6,17,18 * * *"
+    # UTC: around 07:07/19:07 in summer and 06:07/18:07 in winter.
+    # Always execute delayed jobs; persistent state keeps repeated runs silent.
+    - cron: "7 5,17 * * *"
   workflow_dispatch:
 
 permissions:
@@ -15,33 +17,32 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Select German 07:00 and 19:00 runs
-        id: schedule
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          local_hour="$(TZ=Europe/Berlin date +%H)"
-          if [ "$local_hour" = "07" ] || [ "$local_hour" = "19" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/checkout@v7
-        if: steps.schedule.outputs.run == 'true'
       - uses: actions/setup-python@v7
-        if: steps.schedule.outputs.run == 'true'
         with:
           python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Test calendar synchronization
+        run: python -m unittest tests.test_korntal -v
       - name: Sync Korntal feeds
-        if: steps.schedule.outputs.run == 'true'
+        id: sync
         env:
           KORNTAL_WHOOP_WEBHOOK_URL: ${{ secrets.KORNTAL_WHOOP_WEBHOOK_URL }}
           KORNTAL_3_5_WEBHOOK_URL: ${{ secrets.KORNTAL_3_5_WEBHOOK_URL }}
           KORNTAL_RACE_WEBHOOK_URL: ${{ secrets.KORNTAL_RACE_WEBHOOK_URL }}
         run: python run_korntal.py sync
       - name: Persist Korntal state
-        if: steps.schedule.outputs.run == 'true'
+        # Preserve successful messages even if a later feed or message failed.
+        if: ${{ always() && steps.sync.outcome != 'skipped' }}
         run: |
           if [ -z "$(git status --porcelain -- data/korntal)" ]; then echo "Korntal state is unchanged."; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/korntal
           git commit -m "Update TSV Korntal calendar state"
+          git pull --rebase origin main
           git push

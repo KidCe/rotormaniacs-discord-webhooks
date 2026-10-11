@@ -16,7 +16,7 @@ def _unescape(value: str) -> str:
 
 
 def _property(line: str, name: str) -> str:
-    if not line.startswith(name):
+    if line.partition(":")[0].partition(";")[0] != name:
         return ""
     _, _, value = line.partition(":")
     return _unescape(value)
@@ -46,12 +46,16 @@ def parse_ical(payload: str) -> list[CalendarEvent]:
             lines[-1] += raw[1:]
         else:
             lines.append(raw)
+    if "BEGIN:VCALENDAR" not in lines or "END:VCALENDAR" not in lines:
+        raise ValueError("Calendar source did not return a complete iCal calendar.")
     events: list[CalendarEvent] = []
     current: dict[str, str] | None = None
     for line in lines:
         if line == "BEGIN:VEVENT":
             current = {}
         elif line == "END:VEVENT" and current is not None:
+            if not all(current.get(name) for name in ("UID", "DTSTART", "SUMMARY")):
+                raise ValueError("Calendar source returned an event without UID, DTSTART or SUMMARY.")
             if current.get("UID") and current.get("DTSTART") and current.get("SUMMARY"):
                 summary = current["SUMMARY"]
                 events.append(CalendarEvent(
@@ -68,6 +72,8 @@ def parse_ical(payload: str) -> list[CalendarEvent]:
                 if value:
                     current[name] = value
                     break
+    if current is not None:
+        raise ValueError("Calendar source returned an incomplete event.")
     return sorted(events, key=lambda event: (event.start, event.summary.casefold()))
 
 

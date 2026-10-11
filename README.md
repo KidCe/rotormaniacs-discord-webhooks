@@ -38,7 +38,17 @@ The workflow reads the official iCal feed and maintains three independent channe
 - `#training-3-5-zoll` — 3–5 inch training in Sporthalle Korntal (SKO).
 - `#whooprace` — Whooprace and race events.
 
-Each channel has one dashboard containing the next six events. The next event also gets a separate message, which is deleted and recreated when the next event changes so subscribers receive a fresh notification. Users can react with ✅ or ❌; reactions are not evaluated automatically.
+Each channel has one dashboard containing the next six events. Whoop training and race channels also have a separate next-event message.
+
+The **3–5 inch SKO training channel** additionally:
+
+- Announces every newly published training date, including dates beyond the six-event dashboard. Calendar imports are grouped into messages of up to six dates.
+- Posts a separate update when a date, start/end time, location, or explicit cancellation changes. Historical announcements stay in the channel.
+- Posts one attendance request per training date starting on Monday of its week in **Europe/Berlin**: “This week there is another training at Sporthalle Korntal (SKO). Who will join us and fly?” Members vote by reacting with **✅ I will attend** or **❌ I will not attend**, as in the SV Aich availability messages.
+- Catches up if Monday's run is delayed or missed, and keeps the same attendance message when training details change so reactions remain attached. Cancelled dates do not create new attendance requests; existing requests are marked cancelled.
+- Recognizes title variants such as `3-5" Hallen Training` and `3–5″ Hallen Training`, plus SKO training identified by calendar categories. Whoopraces remain in the race channel.
+
+Votes use Discord reactions and are not evaluated automatically. Messages respect members' channel notification settings; they do not ping `@everyone` or a role. Unchanged runs stay silent.
 
 Workflow: `.github/workflows/sync-korntal.yml`
 
@@ -50,9 +60,11 @@ Required secrets:
 
 ## Scheduling and state
 
-Both workflows run twice daily around 07:00 and 19:00 Europe/Berlin and can also be started manually from GitHub Actions. The SV Aich workflow is deliberately idempotent and no longer skips runs when GitHub starts a scheduled job late. They run on GitHub-hosted runners, so the local Windows PC does not need to be online.
+Both workflows are scheduled twice daily at 05:07 and 17:07 UTC (07:07/19:07 in German summer time, 06:07/18:07 in winter) and can also be started manually from GitHub Actions. GitHub may start scheduled jobs late. Both syncs execute regardless of their actual start hour and use persistent state to prevent duplicates. They run on GitHub-hosted runners, so the local Windows PC does not need to be online.
 
 The workflows commit only non-secret synchronization state back to `data/state.json` and the Korntal state files. This preserves Discord message IDs and event fingerprints across short-lived runners and prevents duplicate posts.
+
+The Korntal workflow also preserves successful message state after a partial sync failure. It fetches one validated calendar for all three feeds and reports missing webhook configuration or failed feeds as errors instead of silently succeeding. A missing entry is not automatically treated as a cancellation: only explicit cancellation information from the source triggers that notification.
 
 ## Security model
 
@@ -69,6 +81,7 @@ The core implementation is Python 3.11+ and can be tested locally without publis
 ```powershell
 python -m unittest discover -s tests -v
 python run.py sync --dry-run
+python run_korntal.py sync --dry-run --feed training-3-5-zoll
 ```
 
 The Windows convenience launchers were intentionally removed because the supported deployment is GitHub Actions. The Python modules remain available for testing and diagnostics.

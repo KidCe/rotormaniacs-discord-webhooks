@@ -23,7 +23,15 @@ class Webhook:
 
     def _save(self, state: dict[str, object]) -> None:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
-        self.state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+        temporary_path = self.state_path.with_suffix(".tmp")
+        temporary_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+        temporary_path.replace(self.state_path)
+
+    def publish_new(self, payload: dict[str, object]) -> str:
+        message_id = str(self._request("POST", f"{self.url}?wait=true", payload).get("id", ""))
+        if not message_id:
+            raise WebhookError("Discord did not return a message ID.")
+        return message_id
 
     def sync_message(self, slot: str, payload: dict[str, object]) -> bool:
         state = self._state()
@@ -34,7 +42,8 @@ class Webhook:
         message_id = str(message.get("messageId", "")) if isinstance(message, dict) else ""
         if message_id:
             try:
-                self._request("PATCH", f"{self.url}/messages/{message_id}", payload)
+                editable = {key: value for key, value in payload.items() if key not in {"username", "avatar_url"}}
+                self._request("PATCH", f"{self.url}/messages/{message_id}", editable)
             except WebhookError as exc:
                 if "HTTP 404" not in str(exc):
                     raise
