@@ -44,11 +44,14 @@ The **3–5 inch SKO training channel** additionally:
 
 - Announces every newly published training date, including dates beyond the six-event dashboard. Calendar imports are grouped into messages of up to six dates.
 - Posts a separate update when a date, start/end time, location, or explicit cancellation changes. Historical announcements stay in the channel.
-- Posts one attendance request per training date starting on Monday of its week in **Europe/Berlin**: “This week there is another training at Sporthalle Korntal (SKO). Who will join us and fly?” Members vote by reacting with **✅ I will attend** or **❌ I will not attend**, as in the SV Aich availability messages.
-- Catches up if Monday's run is delayed or missed, and keeps the same attendance message when training details change so reactions remain attached. Cancelled dates do not create new attendance requests; existing requests are marked cancelled.
+- Posts one **native Discord attendance poll** per training date starting on Monday of its week in **Europe/Berlin**. Members select **✅ I will attend**, **❌ I will not attend**, or **🤔 Not sure yet** directly in Discord, with one answer per person. No emoji search or additional bot token is needed.
+- Opens the poll until approximately the training start (Discord accepts whole-hour durations, so expiry can be up to one hour later). Delayed or missed Monday runs catch up before training begins; unchanged runs keep the same poll and votes.
+- Posts a short **Friday reminder** for each training date that weekend, linking to the existing poll and full dashboard and showing the following three training dates. A missed Friday reminder catches up before the training starts, without opening another poll.
+- Keeps native polls immutable. A change to the training time or location during its week creates a new dated poll; earlier polls and votes remain as history. Title-only changes preserve the existing poll. A date moved to a later week gets its new poll in that week. Cancellation notifications tell members to disregard earlier polls; the webhook cannot forcibly close them before their original expiry.
+- Migrates active legacy reaction requests by creating a native poll and linking the old request to it. Existing reactions cannot be transferred into native poll votes.
 - Recognizes title variants such as `3-5" Hallen Training` and `3–5″ Hallen Training`, plus SKO training identified by calendar categories. Whoopraces remain in the race channel.
 
-Votes use Discord reactions and are not evaluated automatically. Messages respect members' channel notification settings; they do not ping `@everyone` or a role. Unchanged runs stay silent.
+SKO votes use Discord's built-in poll UI and result display. Whoop/race next-event requests and SV Aich availability messages continue using reactions. Messages respect members' channel notification settings; they do not ping `@everyone` or a role. Unchanged runs stay silent.
 
 Workflow: `.github/workflows/sync-korntal.yml`
 
@@ -83,5 +86,9 @@ python -m unittest discover -s tests -v
 python run.py sync --dry-run
 python run_korntal.py sync --dry-run --feed training-3-5-zoll
 ```
+
+For a live webhook API check, the Korntal workflow's optional **verify_poll** input creates one silent, clearly marked test poll, reads it back to verify the three choices, and removes only that temporary message. It does not modify attendance state or existing event messages. The equivalent command is `python run_korntal.py verify-poll`, using the private `KORNTAL_3_5_WEBHOOK_URL` configuration.
+
+API references: [Discord webhook polls](https://docs.discord.com/developers/resources/webhook#execute-webhook), [Discord poll structure and limitations](https://docs.discord.com/developers/resources/poll).
 
 The Windows convenience launchers were intentionally removed because the supported deployment is GitHub Actions. The Python modules remain available for testing and diagnostics.

@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from korntalbot.dispatch import FEEDS, sync_feed  # noqa: E402
 from korntalbot.discord_client import Webhook  # noqa: E402
 from korntalbot.ical import parse_ical  # noqa: E402
-from korntalbot.render import next_event_payload  # noqa: E402
+from korntalbot.render import availability_payload, next_event_payload  # noqa: E402
 
 
 def sko_event(uid: str = "2410-1792227600-1792274400@fpvkorntal.de", day: str = "20261017"):
@@ -39,13 +39,19 @@ class KorntalSyncTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.state_dir = Path(self.directory.name)
         self.requests = []
+        self.messages = {}
         self.failure = None
 
         def request(client, method, url, payload):
             if self.failure and self.failure(method, payload):
                 raise RuntimeError("Simulated Discord failure")
             self.requests.append((method, payload))
-            return {"id": str(len(self.requests))}
+            if method == "GET" and "/messages/" in url:
+                return self.messages[url.rsplit("/", 1)[1]]
+            if method == "POST":
+                self.messages[str(len(self.requests))] = {"id": str(len(self.requests)), **payload}
+            return {"id": str(len(self.requests)), "guild_id": "123", "channel_id": "456",
+                    **({"poll": payload["poll"]} if payload and "poll" in payload else {})}
 
         self.addCleanup(patch.stopall)
         patch.object(Webhook, "_request", request).start()
@@ -77,8 +83,9 @@ class KorntalSyncTests(unittest.TestCase):
         self.assertEqual(len(self.posts()), 1)
         poll = self.posts()[0]
         self.assertIn("THIS WEEK", poll["embeds"][0]["title"])
-        self.assertIn("✅", poll["content"])
-        self.assertIn("❌", poll["content"])
+        self.assertEqual([a["poll_media"]["emoji"]["name"] for a in poll["poll"]["answers"]], ["✅", "❌", "🤔"])
+        self.assertFalse(poll["poll"]["allow_multiselect"])
+        self.assertEqual(poll["poll"]["duration"], 122)
         state_before = json.loads((self.state_dir / FEEDS[1].state_file).read_text(encoding="utf-8"))
         self.requests.clear()
         self.sync(events, "2026-10-14")
@@ -89,7 +96,7 @@ class KorntalSyncTests(unittest.TestCase):
         result = self.sync([sko_event(), sko_event("2419-1-2@fpvkorntal.de", "20261018")], "2026-10-15")
         self.assertEqual(result["availabilityUpdated"], 2)
 
-    def test_rescheduled_uid_notifies_change_and_edits_poll_without_deleting(self):
+    def test_rescheduled_uid_creates_new_poll_without_editing_or_deleting_old_poll(self):
         event = sko_event()
         self.sync([event])
         self.requests.clear()
@@ -98,10 +105,13 @@ class KorntalSyncTests(unittest.TestCase):
         self.assertEqual(result["eventsAnnounced"], 1)
         self.assertIn("UPDATED", self.posts()[0]["embeds"][0]["title"])
         self.assertNotIn("DELETE", [method for method, _ in self.requests])
-        self.assertEqual(len(self.posts()), 1)
-        self.assertTrue(any(method == "PATCH" and "THIS WEEK" in p["embeds"][0]["title"] for method, p in self.requests))
+        self.assertEqual(len(self.posts()), 2)
+        self.assertIn("UPDATED DATE", self.posts()[1]["embeds"][0]["title"])
+        self.assertFalse(any(method == "PATCH" and "THIS WEEK" in p["embeds"][0]["title"] for method, p in self.requests))
+        state = json.loads((self.state_dir / FEEDS[1].state_file).read_text(encoding="utf-8"))
+        self.assertEqual(len(state["pollHistory"]["availability:fpvkorntal:2410"]), 1)
 
-    def test_cancellation_notifies_once_and_updates_existing_poll(self):
+    def test_cancellation_notifies_once_without_touching_native_poll(self):
         event = sko_event()
         self.sync([event])
         self.requests.clear()
@@ -110,7 +120,8 @@ class KorntalSyncTests(unittest.TestCase):
         self.assertEqual(result["eventsAnnounced"], 1)
         self.assertIn("CANCELLED", self.posts()[0]["embeds"][0]["title"])
         self.assertFalse(any(method == "DELETE" for method, _ in self.requests))
-        self.assertTrue(any(method == "PATCH" and "CANCELLED" in p["embeds"][0]["title"] for method, p in self.requests))
+        self.assertIn("disregard", self.posts()[0]["embeds"][0]["description"])
+        self.assertFalse(any(method == "PATCH" and "CANCELLED" in p["embeds"][0]["title"] for method, p in self.requests))
         self.requests.clear()
         self.sync([cancelled], "2026-10-14")
         self.assertEqual(self.requests, [])
@@ -146,6 +157,70 @@ class KorntalSyncTests(unittest.TestCase):
         event = sko_event("2420-1-2@fpvkorntal.de", "20270207")
         result = self.sync([event], "2027-02-01")
         self.assertEqual(result["availabilityUpdated"], 1)
+
+    def test_friday_reminder_links_same_poll_and_dashboard_and_only_posts_once(self):
+        event = sko_event()
+        self.sync([event])
+        state = json.loads((self.state_dir / FEEDS[1].state_file).read_text(encoding="utf-8"))
+        poll_id = state["availability:fpvkorntal:2410"]["messageId"]
+        self.requests.clear()
+        result = self.sync([event], "2026-10-16")
+        self.assertEqual(result["fridayRemindersUpdated"], 1)
+        self.assertEqual(result["availabilityUpdated"], 0)
+        self.assertEqual(len(self.posts()), 1)
+        self.assertNotIn("poll", self.posts()[0])
+        self.assertIn(f"https://discord.com/channels/123/456/{poll_id}", self.posts()[0]["content"])
+        self.assertIn(state["dashboard"]["messageId"], self.posts()[0]["embeds"][0]["description"])
+        self.requests.clear()
+        self.sync([event], "2026-10-16", 19)
+        self.assertEqual(self.requests, [])
+
+    def test_missed_friday_reminder_catches_up_before_saturday_training(self):
+        event = sko_event()
+        self.sync([event])
+        self.requests.clear()
+        self.assertEqual(self.sync([event], "2026-10-17", 7)["fridayRemindersUpdated"], 1)
+        self.requests.clear()
+        result = self.sync([event], "2026-10-17", 19)
+        self.assertEqual(result["fridayRemindersUpdated"], 0)
+        self.assertFalse(self.posts())
+
+    def test_cancelled_event_does_not_get_friday_reminder(self):
+        event = sko_event()
+        self.sync([event])
+        result = self.sync([replace(event, cancelled=True)], "2026-10-16")
+        self.assertEqual(result["availabilityUpdated"], 0)
+        self.assertEqual(result["fridayRemindersUpdated"], 0)
+
+    def test_title_only_change_preserves_native_poll(self):
+        event = sko_event()
+        self.sync([event])
+        self.requests.clear()
+        result = self.sync([replace(event, summary='3–5″ Hallen Training')], "2026-10-13")
+        self.assertEqual(result["availabilityUpdated"], 0)
+        self.assertEqual(len(self.posts()), 1)
+
+    def test_legacy_reaction_request_migrates_to_native_poll_and_keeps_old_message(self):
+        event = sko_event()
+        state_path = self.state_dir / FEEDS[1].state_file
+        state_path.write_text(json.dumps({"availability:fpvkorntal:2410": {"messageId": "legacy"}}))
+        result = self.sync([event])
+        self.assertEqual(result["availabilityUpdated"], 1)
+        self.assertFalse(any(method == "DELETE" for method, _ in self.requests))
+        self.assertTrue(any(method == "PATCH" and "replaced" in payload.get("content", "") for method, payload in self.requests))
+
+    def test_poll_duration_uses_elapsed_hours_across_dst(self):
+        event = sko_event("2411-1-2@fpvkorntal.de", "20261025")
+        now = datetime(2026, 10, 19, 7, tzinfo=ZoneInfo("Europe/Berlin"))
+        self.assertEqual(availability_payload(event, FEEDS[1].label, now)["poll"]["duration"], 147)
+
+    def test_live_probe_removes_only_its_own_message_after_get_validation(self):
+        client = Webhook("https://discord.example/webhook", self.state_dir / "probe.json")
+        event = sko_event()
+        client.verify_poll(availability_payload(event, FEEDS[1].label, event.start))
+        self.assertEqual([method for method, _ in self.requests], ["POST", "GET", "DELETE"])
+        self.assertEqual(self.posts()[0]["flags"], 4096)
+        self.assertFalse((self.state_dir / "probe.json").exists())
 
     def test_second_failed_import_batch_does_not_duplicate_first_batch(self):
         events = [sko_event(f"{2500 + i}-1-2@fpvkorntal.de") for i in range(8)]

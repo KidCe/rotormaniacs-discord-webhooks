@@ -6,6 +6,11 @@ on:
     # Always execute delayed jobs; persistent state keeps repeated runs silent.
     - cron: "7 5,17 * * *"
   workflow_dispatch:
+    inputs:
+      verify_poll:
+        description: "Verify a silent native poll and remove the temporary test message"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -28,6 +33,11 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r requirements.txt
       - name: Test calendar synchronization
         run: python -m unittest tests.test_korntal -v
+      - name: Verify native webhook polls
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.verify_poll }}
+        env:
+          KORNTAL_3_5_WEBHOOK_URL: ${{ secrets.KORNTAL_3_5_WEBHOOK_URL }}
+        run: python run_korntal.py verify-poll
       - name: Sync Korntal feeds
         id: sync
         env:

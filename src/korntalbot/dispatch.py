@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from .discord_client import Webhook
 from .ical import fetch_events
 from .models import CalendarEvent
-from .render import availability_payload, dashboard_payload, event_notification_payload, next_event_payload
+from .render import attendance_key, availability_payload, dashboard_payload, event_notification_payload, friday_reminder_payload, next_event_payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,18 +102,23 @@ def _sync_sko(feed: Feed, webhook: Webhook, upcoming: list[CalendarEvent], event
             announced += len(batch)
 
     availability_updated = 0
+    reminders_sent = 0
     monday = now.date() - timedelta(days=now.weekday())
     for event in events:
         slot = f"availability:{event.identity}"
         record = webhook._state().get(slot)
-        changed = isinstance(record, dict) and record.get("eventFingerprint") != event.fingerprint
         in_week = monday <= event.event_date < monday + timedelta(days=7)
-        due = event in upcoming and in_week and not event.cancelled
-        if due or changed:
-            # PATCH keeps the same message and its members' reactions on schedule changes.
-            availability_updated += webhook.sync_message(slot, availability_payload(event, feed.label, rescheduled=not in_week))
-            poll_state = webhook._state()
-            poll_state[slot]["eventFingerprint"] = event.fingerprint
-            webhook._save(poll_state)
+        due = now < event.start and in_week and not event.cancelled
+        if due:
+            key = attendance_key(event)
+            changed = bool(record and record.get("nativePoll") and record.get("eventKey") != key)
+            availability_updated += webhook.sync_poll(slot, availability_payload(event, feed.label, now, rescheduled=changed), key)
+            if now.weekday() >= 4 and event.event_date.weekday() in {5, 6}:
+                current = webhook._state()
+                poll_url = webhook.message_url(current[slot]["messageId"])
+                dashboard_url = webhook.message_url(current["dashboard"]["messageId"])
+                reminder_slot = f"friday:{event.identity}:{key}"
+                reminders_sent += webhook.sync_message(reminder_slot, friday_reminder_payload(
+                    event, feed.label, poll_url, dashboard_url, upcoming))
     return {"feed": feed.key, "events": len(upcoming), "dashboardUpdated": dashboard_changed,
-            "eventsAnnounced": announced, "availabilityUpdated": availability_updated}
+            "eventsAnnounced": announced, "availabilityUpdated": availability_updated, "fridayRemindersUpdated": reminders_sent}

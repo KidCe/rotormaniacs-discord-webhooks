@@ -33,6 +33,74 @@ class Webhook:
             raise WebhookError("Discord did not return a message ID.")
         return message_id
 
+    def sync_poll(self, slot: str, payload: dict[str, object], event_key: str) -> bool:
+        """Create immutable polls once; keep previous votes on schedule changes."""
+        state = self._state()
+        previous = state.get(slot, {})
+        if previous.get("nativePoll") and previous.get("eventKey") == event_key:
+            self._redirect_legacy(slot)
+            return False
+        if "discord" not in state:
+            context = self._request("GET", self.url, None)
+            if not context.get("guild_id") or not context.get("channel_id"):
+                raise WebhookError("Discord did not return the server and channel IDs for poll links.")
+            state["discord"] = {"guildId": str(context["guild_id"]), "channelId": str(context["channel_id"])}
+            self._save(state)
+        message = self._request("POST", f"{self.url}?wait=true", payload)
+        message_id = str(message.get("id", ""))
+        if not message_id:
+            raise WebhookError("Discord did not return a poll message ID.")
+        if not message.get("poll"):
+            self.delete_message(message_id)
+            raise WebhookError("Discord did not create the requested native poll.")
+        if previous.get("messageId"):
+            state.setdefault("pollHistory", {}).setdefault(slot, []).append(previous)
+        state[slot] = {"messageId": message_id, "nativePoll": True, "eventKey": event_key}
+        if previous.get("messageId") and not previous.get("nativePoll"):
+            state[slot]["legacyMessageId"] = previous["messageId"]
+        self._save(state)
+        # Legacy reaction requests remain as history but point voters to the new poll.
+        self._redirect_legacy(slot)
+        return True
+
+    def _redirect_legacy(self, slot: str) -> None:
+        state = self._state()
+        record = state[slot]
+        if not record.get("legacyMessageId"):
+            return
+        try:
+            self._request("PATCH", f"{self.url}/messages/{record['legacyMessageId']}", {
+                "content": f"This reaction-based request has been replaced. Please vote here: {self.message_url(record['messageId'])}",
+                "embeds": [], "allowed_mentions": {"parse": []},
+            })
+        except WebhookError as exc:
+            if "HTTP 404" not in str(exc):
+                raise
+        record.pop("legacyMessageId")
+        self._save(state)
+
+    def message_url(self, message_id: str) -> str:
+        context = self._state()["discord"]
+        return f"https://discord.com/channels/{context['guildId']}/{context['channelId']}/{message_id}"
+
+    def verify_poll(self, payload: dict[str, object]) -> None:
+        """Silent live API probe. Never edits or deletes an existing event message."""
+        payload = {**payload, "flags": 4096, "content": "TEST — checking native webhook polls; this message is automatically removed.",
+                   "embeds": [], "poll": {**payload["poll"], "duration": 1,
+                                          "question": {"text": "TEST — automatically removed after verification"}}}
+        message_id = self.publish_new(payload)
+        try:
+            message = self._request("GET", f"{self.url}/messages/{message_id}", None)
+            poll = message.get("poll", {})
+            media = [(answer["poll_media"].get("text"), answer["poll_media"].get("emoji", {}).get("name"))
+                     for answer in poll.get("answers", [])]
+            expected = [(answer["poll_media"]["text"], answer["poll_media"]["emoji"]["name"])
+                        for answer in payload["poll"]["answers"]]
+            if media != expected or poll.get("allow_multiselect") is not False:
+                raise WebhookError("Live Discord poll verification failed.")
+        finally:
+            self.delete_message(message_id)
+
     def sync_message(self, slot: str, payload: dict[str, object]) -> bool:
         state = self._state()
         digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True).encode()).hexdigest()

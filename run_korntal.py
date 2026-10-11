@@ -13,7 +13,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from korntalbot.dispatch import FEEDS, sync_feed  # noqa: E402
 from korntalbot.ical import fetch_events  # noqa: E402
-from korntalbot.discord_client import WebhookError  # noqa: E402
+from korntalbot.discord_client import Webhook, WebhookError  # noqa: E402
+from korntalbot.render import availability_payload  # noqa: E402
 
 
 def _env_file() -> dict[str, str]:
@@ -29,7 +30,7 @@ def _env_file() -> dict[str, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Sync the TSV Korntal calendar to Discord.")
-    parser.add_argument("command", choices=["sync"])
+    parser.add_argument("command", choices=["sync", "verify-poll"])
     parser.add_argument("--dry-run", action="store_true", help="Read the live calendar without posting or saving state.")
     parser.add_argument("--feed", choices=[feed.key for feed in FEEDS], help="Sync or preview one channel only.")
     args = parser.parse_args()
@@ -37,6 +38,17 @@ def main() -> int:
     state_dir = PROJECT_ROOT / "data" / "korntal"
     source_events = fetch_events()
     now = datetime.now(ZoneInfo("Europe/Berlin"))
+    if args.command == "verify-poll":
+        if args.dry_run:
+            parser.error("verify-poll is a live API check; use sync --dry-run for a read-only preview")
+        feed = FEEDS[1]
+        webhook_url = os.environ.get(feed.webhook_env, values.get(feed.webhook_env, ""))
+        if not webhook_url:
+            raise WebhookError(f"{feed.webhook_env} is not configured.")
+        event = next(event for event in source_events if feed.matcher(event) and event.start > now and not event.cancelled)
+        Webhook(webhook_url, state_dir / feed.state_file).verify_poll(availability_payload(event, feed.label, now))
+        print("Verified native webhook poll: ✅ / ❌ / 🤔, single choice. Temporary test message removed.")
+        return 0
     failed = False
     for feed in FEEDS:
         if args.feed and feed.key != args.feed:

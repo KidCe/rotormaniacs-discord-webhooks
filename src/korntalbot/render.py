@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from math import ceil
+from zoneinfo import ZoneInfo
 
 from .models import CalendarEvent
 
@@ -23,7 +25,12 @@ def event_notification_payload(events: list[CalendarEvent], label: str, kind: st
         "allowed_mentions": {"parse": []},
         "embeds": [{
             "title": f"📅 {label} — {kind.upper()} TRAINING DATES",
-            "description": "Published training dates at Sporthalle Korntal (SKO).",
+            "description": (
+                "This training is cancelled. Please disregard its earlier attendance polls."
+                if kind == "cancelled" else
+                "Training details have changed. Check the dates below; polls for an earlier time no longer apply."
+                if kind == "updated" else "Published training dates at Sporthalle Korntal (SKO)."
+            ),
             "color": 0xE74C3C if kind == "cancelled" else 0x2E8B57,
             "fields": [{"name": f"{index}. Training", "value": _event_value(event), "inline": False}
                        for index, event in enumerate(events, 1)],
@@ -32,24 +39,54 @@ def event_notification_payload(events: list[CalendarEvent], label: str, kind: st
     }
 
 
-def availability_payload(event: CalendarEvent, label: str, *, rescheduled: bool = False) -> dict[str, object]:
-    if event.cancelled:
-        title = f"❌ CANCELLED — {label}"
-        content = "This training has been cancelled. The attendance request is no longer active."
-    else:
-        title = f"📅 {'RESCHEDULED' if rescheduled else 'THIS WEEK'} — {label} AT SKO"
-        content = (
-            "Training at Sporthalle Korntal (SKO) has been rescheduled.\n"
-            if rescheduled else "This week there is another training at Sporthalle Korntal (SKO).\n"
-        ) + "Who will join us and fly?\n✅ I will attend   ❌ I will not attend\nPlease react directly to this message."
+def attendance_key(event: CalendarEvent) -> str:
+    return "|".join((event.start.isoformat(), event.end.isoformat() if event.end else "", event.location))
+
+
+def availability_payload(event: CalendarEvent, label: str, now: datetime, *, rescheduled: bool = False) -> dict[str, object]:
+    start = event.start.astimezone(ZoneInfo("Europe/Berlin"))
+    hours = max(1, min(32 * 24, ceil((event.start.timestamp() - now.timestamp()) / 3600)))
+    title = f"📅 {'UPDATED DATE' if rescheduled else 'THIS WEEK'} — {label} AT SKO"
+    content = (
+        "The training time has changed. Please vote again in this new poll.\n"
+        if rescheduled else "This week there is another training at Sporthalle Korntal (SKO).\n"
+    ) + "Who will join us and fly? Select your answer in the poll below."
     return {
         "username": "TSV Korntal FPV Kalender",
         "allowed_mentions": {"parse": []},
         "content": content,
         "embeds": [{
             "title": title, "description": _event_value(event),
-            "color": 0xE74C3C if event.cancelled else 0x3498DB,
-            "footer": {"text": "Manual attendance poll · React with ✅ or ❌"},
+            "color": 0x3498DB,
+            "footer": {"text": "Attendance poll · One answer per person · Times: Europe/Berlin"},
+        }],
+        "poll": {
+            "question": {"text": f"Will you fly at SKO on {start.strftime('%a %d %b %Y, %H:%M')}?"},
+            "answers": [
+                {"poll_media": {"text": "I will attend", "emoji": {"name": "✅"}}},
+                {"poll_media": {"text": "I will not attend", "emoji": {"name": "❌"}}},
+                {"poll_media": {"text": "Not sure yet", "emoji": {"name": "🤔"}}},
+            ],
+            "duration": hours, "allow_multiselect": False, "layout_type": 1,
+        },
+    }
+
+
+def friday_reminder_payload(event: CalendarEvent, label: str, poll_url: str, dashboard_url: str,
+                            upcoming: list[CalendarEvent]) -> dict[str, object]:
+    following = [candidate for candidate in upcoming if candidate.start > event.start and not candidate.cancelled][:3]
+    return {
+        "username": "TSV Korntal FPV Kalender",
+        "allowed_mentions": {"parse": []},
+        "content": f"Training at SKO this weekend! Please confirm whether you will join us.\n{poll_url}",
+        "embeds": [{
+            "title": f"📅 THIS WEEKEND — {label}",
+            "description": _event_value(event) + f"\n\n[Vote in the attendance poll]({poll_url})"
+                           + f" · [Full schedule]({dashboard_url})",
+            "color": 0xE67E22,
+            "fields": [{"name": "Following training dates", "value": "\n".join(_timestamp(e.start) for e in following),
+                        "inline": False}] if following else [],
+            "footer": {"text": "Weekend reminder · Use the existing poll so all votes stay together"},
         }],
     }
 
