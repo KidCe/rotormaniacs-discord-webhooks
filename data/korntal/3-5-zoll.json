@@ -56,5 +56,14 @@
       "fingerprint": "3-5\" Hallen Training|2027-03-21T09:00:00+01:00|2027-03-21T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany|https://fpvkorntal.de/kalender/3-5-hallen-training-15/|False",
       "messageId": "1558871222324830289"
     }
+  },
+  "discord": {
+    "guildId": "1308875879786610718",
+    "channelId": "1537618906838212759"
+  },
+  "availability:fpvkorntal:2410": {
+    "messageId": "1559189572414607391",
+    "nativePoll": true,
+    "eventKey": "2026-10-17T09:00:00+02:00|2026-10-17T22:00:00+02:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany"
   }
 }
