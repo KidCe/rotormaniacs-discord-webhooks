@@ -1,6 +1,5 @@
 {
   "events": {
-    "350245045": "2026-10-11|15:00:00|SV 07 Aich|TSV Neckartenzlingen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245101": "2027-03-14|15:00:00|SV 07 Aich|TSV Neckartailfingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245113": "2027-04-04|15:00:00|SV 07 Aich|TSV \u00d6tlingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245132": "2027-04-18|15:00:00|SV 07 Aich|SGM H\u00f6llbach II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
@@ -9,30 +8,23 @@
     "350245168": "2027-05-23|15:00:00|SV 07 Aich|SPV 05 N\u00fcrtingen II|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
     "350245180": "2027-06-05|15:30:00|SV 07 Aich|SGM Raidwangen II/Oberensingen III|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|"
   },
-  "reminders": {
-    "350245045": "2026-10-11|15:00:00|SV 07 Aich|TSV Neckartenzlingen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|"
-  },
+  "reminders": {},
   "messageId": "1537608512941850698",
-  "lastPublishedAt": "2026-10-05T12:12:46.906977+00:00",
-  "payloadSha256": "12bae9514ff28a0ef0468422d155a21de18595c983ea3e6cfb0318a58b11f6e9",
-  "reminderMessages": {
-    "350245045": {
-      "fingerprint": "2026-10-11|15:00:00|SV 07 Aich|TSV Neckartenzlingen|Sportplatz Aich | Heideweg 60 | 72631 Aichtal|",
-      "messageId": "1557357684284461067"
-    }
-  },
+  "lastPublishedAt": "2026-10-12T23:35:51.218706+00:00",
+  "payloadSha256": "1b1e5a101b86692d709f2d4da7c78ce50bcfa6b3a60691a6697624fd4932e963",
+  "reminderMessages": {},
   "availabilityMessages": {
     "friday": {
-      "weekendKey": "2026-10-10",
-      "messageId": "1556640297537110017"
+      "weekendKey": "2026-10-17",
+      "messageId": "1559348912769470577"
     },
     "saturday": {
-      "weekendKey": "2026-10-10",
-      "messageId": "1556640304956842028"
+      "weekendKey": "2026-10-17",
+      "messageId": "1559348917605507083"
     },
     "sunday": {
-      "weekendKey": "2026-10-10",
-      "messageId": "1556640306202411039"
+      "weekendKey": "2026-10-17",
+      "messageId": "1559348919526490265"
     }
   }
 }
