@@ -1,11 +1,11 @@
 {
   "dashboard": {
     "messageId": "1537624131263008769",
-    "sha256": "76cdebcb3753fb78e945c8e7f10f77ba4f6651c1c4e52d8851e7de3adc067528"
+    "sha256": "be0ad92d0d809a108d09af10e4316d96eace99711f230326ade1bc2e02bec2d9"
   },
   "next": {
-    "messageId": "1558871218042445878",
-    "sha256": "89ec78dea8c8a637d998f4feb8ae81cc65cfa95a771f8aba3d83ad1d3683f13a",
-    "eventKey": "2289-1792177200-1792189800@fpvkorntal.de|Training Whoop|2026-10-16T19:00:00+02:00|2026-10-16T22:30:00+02:00|Aula Halle Korntal, Kerner Straße, Korntal-Münchingen, 70825, Germany|https://fpvkorntal.de/kalender/training-whoop-29/|False"
+    "messageId": "1560943618582126745",
+    "sha256": "70fe51e61dedebb25fe578e528c14f9d3a7de6a56b4656365360df9e08955276",
+    "eventKey": "2290-1792782000-1792794600@fpvkorntal.de|Training Whoop|2026-10-23T19:00:00+02:00|2026-10-23T22:30:00+02:00|Aula Halle Korntal, Kerner Straße, Korntal-Münchingen, 70825, Germany|https://fpvkorntal.de/kalender/training-whoop-30/|False"
   }
 }
