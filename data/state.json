@@ -10,21 +10,21 @@
   },
   "reminders": {},
   "messageId": "1537608512941850698",
-  "lastPublishedAt": "2026-10-12T23:35:51.218706+00:00",
-  "payloadSha256": "1b1e5a101b86692d709f2d4da7c78ce50bcfa6b3a60691a6697624fd4932e963",
+  "lastPublishedAt": "2026-10-19T10:41:36.997138+00:00",
+  "payloadSha256": "ad54536a5ae6cfc663870b37890177a0016f7d8f95261af5e4dbfa9253fb90cf",
   "reminderMessages": {},
   "availabilityMessages": {
     "friday": {
-      "weekendKey": "2026-10-17",
-      "messageId": "1559348912769470577"
+      "weekendKey": "2026-10-24",
+      "messageId": "1561690783524851717"
     },
     "saturday": {
-      "weekendKey": "2026-10-17",
-      "messageId": "1559348917605507083"
+      "weekendKey": "2026-10-24",
+      "messageId": "1561690800969089065"
     },
     "sunday": {
-      "weekendKey": "2026-10-17",
-      "messageId": "1559348919526490265"
+      "weekendKey": "2026-10-24",
+      "messageId": "1561690802042839081"
     }
   }
 }
