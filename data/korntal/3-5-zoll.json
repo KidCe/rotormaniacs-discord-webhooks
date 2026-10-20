@@ -1,7 +1,7 @@
 {
   "dashboard": {
     "messageId": "1537624135608438795",
-    "sha256": "2959e955e57a8366378a8283ac1837067149f1b50149214f9b710d85fd5e1776"
+    "sha256": "a93a06068e482f59bf606dec68b6e7905db1d7add030b737857018861ed2724e"
   },
   "events": {
     "fpvkorntal:2410": {
@@ -13,8 +13,8 @@
       "messageId": "1558871219728548023"
     },
     "fpvkorntal:2412": {
-      "fingerprint": "3-5\" Hallen Training|2026-11-21T09:00:00+01:00|2026-11-21T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany|https://fpvkorntal.de/kalender/3-5-hallen-training-4/|False",
-      "messageId": "1558871219728548023"
+      "fingerprint": "3-5\" Hallen Training|2026-12-06T09:00:00+01:00|2026-12-06T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany|https://fpvkorntal.de/kalender/3-5-hallen-training-4/|False",
+      "messageId": "1562042101493927969"
     },
     "fpvkorntal:2414": {
       "fingerprint": "3-5\" Hallen Training|2026-12-12T09:00:00+01:00|2026-12-12T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany|https://fpvkorntal.de/kalender/3-5-hallen-training-5/|False",

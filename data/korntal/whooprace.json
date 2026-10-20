@@ -1,11 +1,11 @@
 {
   "dashboard": {
     "messageId": "1537624138238263317",
-    "sha256": "3266ed90b1a8418e0e6baee26e438dbb8fa7d38467c8d77f670a9d36f9a2dddd"
+    "sha256": "ee8dd87d3f0ed68d10ccfbcbca5cc0bcc12e483a4b4a301cc3179e6bc7e16a87"
   },
   "next": {
-    "messageId": "1558871224325644399",
-    "sha256": "a920a316b910b56fd40072bce7b92e3271e145ab30b07a832afa3cc2b3af4e20",
-    "eventKey": "2413-1796547600-1796594400@fpvkorntal.de|Winter Whooprace|2026-12-06T09:00:00+01:00|2026-12-06T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany|https://fpvkorntal.de/kalender/winter-whooprace/|False"
+    "messageId": "1562042106456047637",
+    "sha256": "2a19b1aea7167f50400729912210d819daa803b17bf8bd89e15c778ecc3f8b8e",
+    "eventKey": "2413-1795251600-1795298400@fpvkorntal.de|Winter Whooprace|2026-11-21T09:00:00+01:00|2026-11-21T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany|https://fpvkorntal.de/kalender/winter-whooprace/|False"
   }
 }
