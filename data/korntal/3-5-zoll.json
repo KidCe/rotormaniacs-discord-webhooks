@@ -69,5 +69,10 @@
   "friday:fpvkorntal:2410:2026-10-17T09:00:00+02:00|2026-10-17T22:00:00+02:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany": {
     "messageId": "1560588273452191755",
     "sha256": "28eaa0e70a1a76e042c1dadc98ce91dbf264b180f38139e1985ace43f11bbeaf"
+  },
+  "availability:fpvkorntal:2411": {
+    "messageId": "1564231756310122530",
+    "nativePoll": true,
+    "eventKey": "2026-11-01T09:00:00+01:00|2026-11-01T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany"
   }
 }
