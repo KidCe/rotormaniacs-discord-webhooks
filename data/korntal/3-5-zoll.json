@@ -74,5 +74,9 @@
     "messageId": "1564231756310122530",
     "nativePoll": true,
     "eventKey": "2026-11-01T09:00:00+01:00|2026-11-01T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany"
+  },
+  "friday:fpvkorntal:2411:2026-11-01T09:00:00+01:00|2026-11-01T22:00:00+01:00|Sporthalle Korntal (SKO), Martin-Luther-Straße 28, Korntal, Baden Württemberg, 70825, Germany": {
+    "messageId": "1565686475562025141",
+    "sha256": "0484c10c7389b7e8893e2f6d3bde0ed2bd95085138172792c4b84faff7e2fb76"
   }
 }
