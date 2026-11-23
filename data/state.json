@@ -15,16 +15,16 @@
   "reminderMessages": {},
   "availabilityMessages": {
     "friday": {
-      "weekendKey": "2026-11-21",
-      "messageId": "1571880716600483952"
+      "weekendKey": "2026-11-28",
+      "messageId": "1574452655152046234"
     },
     "saturday": {
-      "weekendKey": "2026-11-21",
-      "messageId": "1571880717141540876"
+      "weekendKey": "2026-11-28",
+      "messageId": "1574452663339192321"
     },
     "sunday": {
-      "weekendKey": "2026-11-21",
-      "messageId": "1571880718286590015"
+      "weekendKey": "2026-11-28",
+      "messageId": "1574452664459071642"
     }
   }
 }
